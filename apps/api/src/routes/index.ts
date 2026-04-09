@@ -1,6 +1,6 @@
 import type { FastifyInstance } from 'fastify';
+import { dashboardRoutes } from './dashboard.js';
 
-// Rotas serão registradas aqui conforme as tasks forem implementadas
 export async function registerRoutes(app: FastifyInstance): Promise<void> {
-  app.log.info('Rotas registradas');
+  app.register(dashboardRoutes, { prefix: '/api/v1' });
 }
