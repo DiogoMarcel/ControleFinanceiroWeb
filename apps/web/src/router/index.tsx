@@ -2,6 +2,7 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import { LoginPage } from '@/features/auth/LoginPage';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { ProtectedRoute } from '@/components/layout/ProtectedRoute';
+import { DashboardPage } from '@/features/dashboard/DashboardPage';
 
 function Placeholder({ title }: { title: string }) {
   return (
@@ -20,7 +21,7 @@ export function AppRouter() {
       <Route element={<ProtectedRoute />}>
         <Route element={<AppLayout />}>
         <Route index element={<Navigate to="/dashboard" replace />} />
-        <Route path="/dashboard" element={<Placeholder title="Dashboard" />} />
+        <Route path="/dashboard" element={<DashboardPage />} />
         <Route path="/contas" element={<Placeholder title="Contas do Mês" />} />
         <Route path="/portadores" element={<Placeholder title="Portadores" />} />
         <Route path="/cartoes" element={<Placeholder title="Cartões" />} />
