@@ -1,0 +1,301 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model abastecimentos {
+  idabastecimento    Int       @id @default(autoincrement())
+  observacao         String?   @db.Char(80)
+  dataabastecimento  DateTime  @default(dbgenerated("CURRENT_DATE")) @db.Date
+  totalabastecimento Float
+  kmcarro            Int
+  quantidadelitros   Float
+  id_veiculo         Int?
+  veiculos           veiculos? @relation(fields: [id_veiculo], references: [idveiculo], onDelete: NoAction, onUpdate: NoAction, map: "fk_abastecimento_veiculo")
+}
+
+model aluguel {
+  idaluguel     Int            @id @default(autoincrement())
+  dataaluguel   DateTime?      @db.Date
+  datapagamento DateTime?      @db.Date
+  valoraluguel  Float?
+  aluguelcomp   aluguelcomp[]
+  aluguelconta  aluguelconta[]
+}
+
+model aluguelcomp {
+  idaluguelcomp Int       @id(map: "idaluguelcomp_pkey") @default(autoincrement())
+  id_aluguel    Int?
+  datapagamento DateTime? @db.Date
+  aluguel       aluguel?  @relation(fields: [id_aluguel], references: [idaluguel], onDelete: NoAction, onUpdate: NoAction, map: "fk_aluguelcomp_idaluguel")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model aluguelconta {
+  idaluguelconta Int      @id @default(autoincrement())
+  id_aluguel     Int?
+  tipoconta      String   @db.Char(1)
+  valor          Float
+  descricao      String   @db.VarChar(50)
+  compartilhado  String   @db.Char(1)
+  aluguel        aluguel? @relation(fields: [id_aluguel], references: [idaluguel], onDelete: Cascade, map: "fk_aluguelconta_idaluguel")
+}
+
+model cartao {
+  idcartao         Int             @id @default(autoincrement())
+  nome             String          @db.VarChar(30)
+  diavencimento    Int?            @db.SmallInt
+  bandeira         String?         @db.VarChar(10)
+  id_membrofamilia Int?
+  membrofamilia    membrofamilia?  @relation(fields: [id_membrofamilia], references: [idmembrofamilia], onDelete: NoAction, onUpdate: NoAction, map: "fk_cartao_membrofamilia")
+  despesacartao    despesacartao[]
+}
+
+model compraprodutocabecalho {
+  idcompraprodutocabecalho Int                  @id @default(autoincrement())
+  datacompra               DateTime             @db.Date
+  observacao               String?              @db.Char(500)
+  compraprodutoitens       compraprodutoitens[]
+}
+
+model compraprodutoitens {
+  idcompraprodutoitens      Int                    @id @default(autoincrement())
+  quantidade                Float
+  valorproduto              Float
+  observacao                String?                @db.Char(500)
+  id_compraprodutocabecalho Int
+  id_produto                Int
+  compraprodutocabecalho    compraprodutocabecalho @relation(fields: [id_compraprodutocabecalho], references: [idcompraprodutocabecalho], onDelete: NoAction, onUpdate: NoAction, map: "fk_compraprodutoitens_compraprodutocabecalho")
+  produto                   produto                @relation(fields: [id_produto], references: [idproduto], onDelete: NoAction, onUpdate: NoAction, map: "fk_compraprodutoitens_produto")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model conta {
+  idconta          Int               @id @default(autoincrement())
+  descricao        String            @db.VarChar(50)
+  valor            Float
+  tipoconta        String            @db.Char(1)
+  contaanual       Boolean?          @default(false)
+  pertenceafolha   Boolean?          @default(false)
+  debitacartao     Boolean?          @default(false)
+  id_credor        Int?
+  id_membrofamilia Int?
+  pagamentomanual  Boolean?          @default(false)
+  qtdparcela       Int?
+  debitoauto       Boolean?          @default(false)
+  credor           credor?           @relation(fields: [id_credor], references: [idcredor], onDelete: NoAction, onUpdate: NoAction, map: "fk_conta_credor")
+  membrofamilia    membrofamilia?    @relation(fields: [id_membrofamilia], references: [idmembrofamilia], onDelete: NoAction, onUpdate: NoAction, map: "fk_conta_membrofamilia")
+  contapagamentos  contapagamentos[]
+  contatag         contatag[]
+  saldoextrato     saldoextrato[]
+}
+
+model contapagamentos {
+  idcontapagamentos Int       @id @default(autoincrement())
+  dataconta         DateTime? @db.Date
+  databaixa         DateTime? @db.Date
+  id_conta          Int
+  baixaefetuada     Boolean?
+  conta             conta     @relation(fields: [id_conta], references: [idconta], onDelete: NoAction, onUpdate: NoAction, map: "fk_contapagamentos_conta")
+
+  @@unique([dataconta, id_conta], map: "idx_contapagamentos_dataconta")
+}
+
+model contatag {
+  idcontatag Int    @id @default(autoincrement())
+  id_conta   Int?
+  id_tags    Int?
+  conta      conta? @relation(fields: [id_conta], references: [idconta], onDelete: NoAction, onUpdate: NoAction, map: "fk_contatag_conta")
+  tags       tags?  @relation(fields: [id_tags], references: [idtags], onDelete: NoAction, onUpdate: NoAction, map: "fk_contatag_tags")
+}
+
+model credor {
+  idcredor Int     @id @default(autoincrement())
+  nome     String  @db.VarChar(50)
+  conta    conta[]
+}
+
+model despesacartao {
+  iddespesacartao  Int                @id @default(autoincrement())
+  descricao        String             @db.VarChar(30)
+  valor            Float?
+  datadespesa      DateTime?          @db.Date
+  id_cartao        Int?
+  cartao           cartao?            @relation(fields: [id_cartao], references: [idcartao], onDelete: NoAction, onUpdate: NoAction, map: "fk_despesacartao_cartao")
+  despesacartaotag despesacartaotag[]
+}
+
+model despesacartaotag {
+  iddespesacartaotag Int            @id @default(autoincrement())
+  id_despesacartao   Int?
+  id_tags            Int?
+  despesacartao      despesacartao? @relation(fields: [id_despesacartao], references: [iddespesacartao], onDelete: NoAction, onUpdate: NoAction, map: "fk_despesacartaotag_despesacartao")
+  tags               tags?          @relation(fields: [id_tags], references: [idtags], onDelete: NoAction, onUpdate: NoAction, map: "fk_despesacartaotag_tags")
+}
+
+model infoadicional {
+  idinfoadicional Int     @id @default(autoincrement())
+  descricao       String?
+}
+
+model itemservicos {
+  iditemservicos      Int               @id @default(autoincrement())
+  descricao           String?           @db.Char(70)
+  observacao          String?           @db.Char(500)
+  id_servicoprincipal Int
+  servicoprincipal    servicoprincipal  @relation(fields: [id_servicoprincipal], references: [idservicoprincipal], onDelete: NoAction, onUpdate: NoAction, map: "fk_itemservicos_servicoprincipal")
+  subitemservicos     subitemservicos[]
+}
+
+model marcaproduto {
+  idmarcaproduto Int       @id(map: "marca_pkey") @default(autoincrement())
+  descricao      String?   @db.Char(80)
+  produto        produto[]
+}
+
+model membrofamilia {
+  idmembrofamilia Int         @id @default(autoincrement())
+  nome            String      @db.VarChar(50)
+  cartao          cartao[]
+  conta           conta[]
+  portador        portador[]
+  saldofgts       saldofgts[]
+}
+
+model pessoa {
+  idpessoa                 Int                        @id @default(autoincrement())
+  nome                     String?                    @db.Char(70)
+  servicoprestadocabecalho servicoprestadocabecalho[]
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model portador {
+  idportador       Int            @id @default(autoincrement())
+  nomeportador     String         @db.VarChar(45)
+  tipoconta        String         @db.Char(1)
+  agencia          String?        @db.VarChar(10)
+  numeroconta      String?        @db.VarChar(15)
+  digitoconta      String?        @db.Char(1)
+  id_membrofamilia Int
+  imgportador      Int?           @db.SmallInt
+  membrofamilia    membrofamilia  @relation(fields: [id_membrofamilia], references: [idmembrofamilia], onDelete: NoAction, onUpdate: NoAction, map: "fk_portador_membrofamilia")
+  saldoportador    saldoportador?
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model produto {
+  idproduto          Int                  @id @default(autoincrement())
+  descricao          String?              @db.Char(80)
+  tipoproduto        String               @db.Char(1)
+  id_marcaproduto    Int
+  id_unidademedida   Int
+  compraprodutoitens compraprodutoitens[]
+  marcaproduto       marcaproduto         @relation(fields: [id_marcaproduto], references: [idmarcaproduto], onDelete: NoAction, onUpdate: NoAction, map: "fk_produto_marcaproduto")
+  unidademedida      unidademedida        @relation(fields: [id_unidademedida], references: [idunidademedida], onDelete: NoAction, onUpdate: NoAction, map: "fk_produto_unidademedida")
+}
+
+model saldodetalhadoportador {
+  idsaldodetalhadoportador Int       @id @default(autoincrement())
+  saldototal               Float?
+  saldodisponivel          Float?
+  dataalteracao            DateTime? @db.Date
+  diferenca                Float?
+  acumulado                Float?
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model saldoextrato {
+  idsaldoextrato Int      @id @default(autoincrement())
+  datalancamento DateTime @default(dbgenerated("CURRENT_DATE")) @db.Date
+  tiposaldo      String   @db.Char(1)
+  valor          Float
+  saldo          Float
+  descricao      String   @db.VarChar(50)
+  id_conta       Int?
+  conta          conta?   @relation(fields: [id_conta], references: [idconta], onDelete: NoAction, onUpdate: NoAction, map: "fk_saldoextrato_contas")
+}
+
+model saldofgts {
+  idsaldofgts      Int            @id @default(autoincrement())
+  nropis           String         @db.VarChar(15)
+  saldo            Float?
+  senha            String?        @db.VarChar(40)
+  id_membrofamilia Int?
+  membrofamilia    membrofamilia? @relation(fields: [id_membrofamilia], references: [idmembrofamilia], onDelete: NoAction, onUpdate: NoAction, map: "fk_saldofgts_membrofamilia")
+}
+
+model saldoportador {
+  idsaldoportador Int       @id @default(autoincrement())
+  valor           Float?
+  datainclusao    DateTime? @db.Date
+  reservado       Boolean?  @default(false)
+  id_portador     Int?      @unique(map: "idx_saldoportador_id_portador")
+  contacapital    Boolean?  @default(false)
+  portador        portador? @relation(fields: [id_portador], references: [idportador], onDelete: NoAction, onUpdate: NoAction, map: "fk_saldoportador_portador")
+}
+
+model servicoprestadocabecalho {
+  idservicoprestadocabecalho Int                   @id @default(autoincrement())
+  dataorcamento              DateTime              @db.Date
+  dataservico                DateTime?             @db.Date
+  observacao                 String?               @db.Char(500)
+  id_pessoa                  Int
+  pessoa                     pessoa                @relation(fields: [id_pessoa], references: [idpessoa], onDelete: NoAction, onUpdate: NoAction, map: "fk_servicoprestadocabecalho_pessoa")
+  servicoprestadoitem        servicoprestadoitem[]
+}
+
+model servicoprestadoitem {
+  idservicoprestadoitem       Int                      @id @default(autoincrement())
+  observacao                  String?                  @db.Char(500)
+  valorservico                Float
+  id_servicoprestadocabecalho Int
+  id_servicoprincipal         Int
+  servicoprestadocabecalho    servicoprestadocabecalho @relation(fields: [id_servicoprestadocabecalho], references: [idservicoprestadocabecalho], onDelete: NoAction, onUpdate: NoAction, map: "fk_servicoprestadoitem_servicoprestadocabecalho")
+  servicoprincipal            servicoprincipal         @relation(fields: [id_servicoprincipal], references: [idservicoprincipal], onDelete: NoAction, onUpdate: NoAction, map: "fk_servicoprestadoitem_servicoprincipal")
+}
+
+model servicoprincipal {
+  idservicoprincipal  Int                   @id @default(autoincrement())
+  descricao           String?               @db.Char(70)
+  observacao          String?               @db.Char(500)
+  valorservico        Float
+  itemservicos        itemservicos[]
+  servicoprestadoitem servicoprestadoitem[]
+}
+
+model subitemservicos {
+  idsubitemservicos Int          @id @default(autoincrement())
+  descricao         String?      @db.Char(70)
+  observacao        String?      @db.Char(500)
+  id_itemservicos   Int
+  itemservicos      itemservicos @relation(fields: [id_itemservicos], references: [iditemservicos], onDelete: NoAction, onUpdate: NoAction, map: "fk_subitemservicos_itemservicos")
+}
+
+model tags {
+  idtags           Int                @id(map: "tagconta_pkey") @default(autoincrement())
+  descricao        String?            @db.VarChar(30)
+  contatag         contatag[]
+  despesacartaotag despesacartaotag[]
+}
+
+model unidademedida {
+  idunidademedida Int       @id @default(autoincrement())
+  descricao       String?   @db.Char(80)
+  produto         produto[]
+}
+
+model veiculos {
+  idveiculo      Int              @id @default(autoincrement())
+  modelo         String           @db.Char(50)
+  marca          String           @db.Char(50)
+  cor            String           @db.Char(30)
+  datacompra     DateTime         @db.Date
+  datavenda      DateTime?        @db.Date
+  valorcompra    Float
+  valorvenda     Float?
+  abastecimentos abastecimentos[]
+}

@@ -1,5 +1,19 @@
-// Prisma client — será inicializado após `prisma generate` na TASK-04
-// Exporta um placeholder para não bloquear a compilação das rotas futuras
+import { Pool } from 'pg';
+import { PrismaPg } from '@prisma/adapter-pg';
+import { PrismaClient } from '../generated/prisma/client.js';
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export const prisma: any = null;
+const globalForPrisma = globalThis as unknown as {
+  prisma: PrismaClient | undefined;
+};
+
+function createPrismaClient(): PrismaClient {
+  const pool = new Pool({ connectionString: process.env['DATABASE_URL'] });
+  const adapter = new PrismaPg(pool);
+  return new PrismaClient({ adapter });
+}
+
+export const prisma = globalForPrisma.prisma ?? createPrismaClient();
+
+if (process.env['NODE_ENV'] !== 'production') {
+  globalForPrisma.prisma = prisma;
+}
