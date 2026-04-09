@@ -1,143 +1,106 @@
 import { prisma } from '../lib/prisma.js';
 
 export interface DashboardData {
+  // Resumo financeiro
   saldoTotal: number;
-  totalPagar: number;
-  totalReceber: number;
-  saldoLiquido: number;
+  saldoBancario: number;
+  valorReservado: number;
+  totalContasPagar: number;
+  totalContasReceber: number;
+  saldoFgts: number;
+  saldoGeralComFgts: number;
+  // Portadores individuais
   portadores: PortadorResumo[];
-  vencendo7dias: ContaAlerta[];
-  emAtraso: ContaAlerta[];
-  graficoMeses: GraficoMes[];
+  // Gráfico: evolução do saldo total histórico
+  evolucaoSaldo: EvolucaoMes[];
 }
 
-interface PortadorResumo {
+export interface PortadorResumo {
   id: number;
   nome: string;
   tipo: string;
   saldo: number;
+  reservado: boolean;
   membroNome: string;
 }
 
-interface ContaAlerta {
-  id: number;
-  descricao: string;
-  valor: number;
-  dataconta: Date | null;
-}
-
-interface GraficoMes {
+export interface EvolucaoMes {
   mes: string;
-  pagar: number;
-  receber: number;
+  saldoTotal: number;
 }
 
-interface GraficoRawRow {
+interface EvolucaoRow {
   mes: string;
-  pagar: number | string;
-  receber: number | string;
+  saldototal: number | string;
 }
 
-export async function getDashboardData(mes: string): Promise<DashboardData> {
-  const [year, month] = mes.split('-').map(Number);
-  const startOfMonth = new Date(year, month - 1, 1);
-  const endOfMonth = new Date(year, month, 0);
+export async function getDashboardData(): Promise<DashboardData> {
+  const [saldos, portadores, contas, fgts, evolucao] = await Promise.all([
+    // Todos os saldos dos portadores
+    prisma.saldoportador.findMany({ select: { valor: true, reservado: true } }),
 
-  // Data de 6 meses atrás para o gráfico
-  const startGrafico = new Date(year, month - 7, 1);
+    // Portadores com saldo e membro
+    prisma.portador.findMany({
+      include: { saldoportador: true, membrofamilia: true },
+      orderBy: { nomeportador: 'asc' },
+    }),
 
-  const [saldos, portadores, pagamentosDoMes, recebimentosDoMes, emAtrasoRaw, graficoRaw] =
-    await Promise.all([
-      // Saldo total
-      prisma.saldoportador.aggregate({ _sum: { valor: true } }),
+    // Totais de todas as contas ativas por tipo
+    prisma.conta.groupBy({
+      by: ['tipoconta'],
+      _sum: { valor: true },
+    }),
 
-      // Portadores com saldo e membro
-      prisma.portador.findMany({
-        include: { saldoportador: true, membrofamilia: true },
-        orderBy: { nomeportador: 'asc' },
-      }),
+    // FGTS
+    prisma.saldofgts.aggregate({ _sum: { saldo: true } }),
 
-      // Contas a pagar do mês
-      prisma.contapagamentos.findMany({
-        where: {
-          dataconta: { gte: startOfMonth, lte: endOfMonth },
-          conta: { tipoconta: 'P' },
-        },
-        include: { conta: true },
-      }),
-
-      // Contas a receber do mês
-      prisma.contapagamentos.findMany({
-        where: {
-          dataconta: { gte: startOfMonth, lte: endOfMonth },
-          conta: { tipoconta: 'R' },
-        },
-        include: { conta: true },
-      }),
-
-      // Em atraso: meses anteriores, não pagos
-      prisma.contapagamentos.findMany({
-        where: {
-          dataconta: { lt: startOfMonth },
-          baixaefetuada: { not: true },
-          conta: { tipoconta: 'P' },
-        },
-        include: { conta: true },
-        orderBy: { dataconta: 'desc' },
-        take: 20,
-      }),
-
-      // Gráfico últimos 6 meses (raw SQL para agregação eficiente)
-      prisma.$queryRaw<GraficoRawRow[]>`
+    // Evolução histórica do saldo total (último registro de cada mês)
+    prisma.$queryRaw<EvolucaoRow[]>`
+      SELECT mes, saldototal FROM (
         SELECT
-          TO_CHAR(cp.dataconta, 'YYYY-MM') AS mes,
-          SUM(CASE WHEN c.tipoconta = 'P' THEN c.valor ELSE 0 END) AS pagar,
-          SUM(CASE WHEN c.tipoconta = 'R' THEN c.valor ELSE 0 END) AS receber
-        FROM contapagamentos cp
-        JOIN conta c ON c.idconta = cp.id_conta
-        WHERE cp.dataconta >= ${startGrafico}
-          AND cp.dataconta <= ${endOfMonth}
-        GROUP BY TO_CHAR(cp.dataconta, 'YYYY-MM')
-        ORDER BY mes ASC
-      `,
-    ]);
+          TO_CHAR(dataalteracao, 'YYYY-MM') AS mes,
+          saldototal,
+          ROW_NUMBER() OVER (
+            PARTITION BY TO_CHAR(dataalteracao, 'YYYY-MM')
+            ORDER BY idsaldodetalhadoportador DESC
+          ) AS rn
+        FROM saldodetalhadoportador
+        WHERE dataalteracao IS NOT NULL
+      ) t
+      WHERE rn = 1
+      ORDER BY mes ASC
+    `,
+  ]);
 
-  const totalPagar = pagamentosDoMes.reduce((s, p) => s + p.conta.valor, 0);
-  const totalReceber = recebimentosDoMes.reduce((s, p) => s + p.conta.valor, 0);
+  const saldoTotal = saldos.reduce((s, p) => s + (p.valor ?? 0), 0);
+  const valorReservado = saldos
+    .filter((p) => p.reservado === true)
+    .reduce((s, p) => s + (p.valor ?? 0), 0);
+  const saldoBancario = saldoTotal - valorReservado;
 
-  // Vencendo: mês atual não pagos
-  const vencendo7dias: ContaAlerta[] = pagamentosDoMes
-    .filter((p) => p.baixaefetuada !== true)
-    .map((p) => ({
-      id: p.idcontapagamentos,
-      descricao: p.conta.descricao,
-      valor: p.conta.valor,
-      dataconta: p.dataconta,
-    }));
+  const totalPagar = contas.find((c) => c.tipoconta === 'P')?._sum.valor ?? 0;
+  const totalReceber = contas.find((c) => c.tipoconta === 'R')?._sum.valor ?? 0;
+  const saldoFgts = fgts._sum.saldo ?? 0;
 
   return {
-    saldoTotal: saldos._sum.valor ?? 0,
-    totalPagar,
-    totalReceber,
-    saldoLiquido: totalReceber - totalPagar,
+    saldoTotal,
+    saldoBancario,
+    valorReservado,
+    totalContasPagar: totalPagar,
+    totalContasReceber: totalReceber,
+    saldoFgts,
+    saldoGeralComFgts: saldoTotal + saldoFgts,
     portadores: portadores.map((p) => ({
       id: p.idportador,
       nome: p.nomeportador,
       tipo: p.tipoconta,
       saldo: p.saldoportador?.valor ?? 0,
+      reservado: p.saldoportador?.reservado === true,
       membroNome: p.membrofamilia.nome,
     })),
-    vencendo7dias,
-    emAtraso: emAtrasoRaw.map((p) => ({
-      id: p.idcontapagamentos,
-      descricao: p.conta.descricao,
-      valor: p.conta.valor,
-      dataconta: p.dataconta,
-    })),
-    graficoMeses: graficoRaw.map((r) => ({
+    evolucaoSaldo: evolucao.map((r) => ({
       mes: r.mes,
-      pagar: Number(r.pagar),
-      receber: Number(r.receber),
+      saldoTotal: Number(r.saldototal),
     })),
   };
 }

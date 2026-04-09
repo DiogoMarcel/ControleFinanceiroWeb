@@ -6,38 +6,32 @@ export interface PortadorResumo {
   nome: string;
   tipo: string;
   saldo: number;
+  reservado: boolean;
   membroNome: string;
 }
 
-export interface ContaAlerta {
-  id: number;
-  descricao: string;
-  valor: number;
-  dataconta: string | null;
-}
-
-export interface GraficoMes {
+export interface EvolucaoMes {
   mes: string;
-  pagar: number;
-  receber: number;
+  saldoTotal: number;
 }
 
 export interface DashboardData {
   saldoTotal: number;
-  totalPagar: number;
-  totalReceber: number;
-  saldoLiquido: number;
+  saldoBancario: number;
+  valorReservado: number;
+  totalContasPagar: number;
+  totalContasReceber: number;
+  saldoFgts: number;
+  saldoGeralComFgts: number;
   portadores: PortadorResumo[];
-  vencendo7dias: ContaAlerta[];
-  emAtraso: ContaAlerta[];
-  graficoMeses: GraficoMes[];
+  evolucaoSaldo: EvolucaoMes[];
 }
 
-export function useDashboard(mes: string) {
+export function useDashboard() {
   return useQuery<DashboardData>({
-    queryKey: ['dashboard', mes],
+    queryKey: ['dashboard'],
     queryFn: async () => {
-      const { data } = await api.get('/dashboard', { params: { mes } });
+      const { data } = await api.get('/dashboard');
       return data;
     },
     staleTime: 1000 * 60 * 5,
