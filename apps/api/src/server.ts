@@ -1,7 +1,10 @@
+import 'dotenv/config';
 import Fastify from 'fastify';
 import cors from '@fastify/cors';
 import helmet from '@fastify/helmet';
 import rateLimit from '@fastify/rate-limit';
+import { errorHandler } from './middlewares/errorHandler.js';
+import { registerRoutes } from './routes/index.js';
 
 const app = Fastify({
   logger: {
@@ -20,12 +23,16 @@ await app.register(cors, {
   credentials: true,
 });
 
-// Health check
+// Error handler
+app.setErrorHandler(errorHandler);
+
+// Health check (sem autenticação)
 app.get('/health', async () => {
   return { status: 'ok', timestamp: new Date().toISOString() };
 });
 
-// TODO: registrar rotas aqui
+// Rotas da API
+await registerRoutes(app);
 
 const port = Number(process.env['PORT'] ?? 3001);
 const host = process.env['HOST'] ?? '0.0.0.0';
