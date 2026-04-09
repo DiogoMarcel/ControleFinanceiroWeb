@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm install:*)",
+      "Bash(npx tsc:*)",
+      "Bash(timeout 8 npx tsx src/server.ts)",
+      "Bash(npx prisma:*)",
+      "Bash(npx tsx -e ':*)",
+      "Bash(node --import tsx/esm -e ':*)",
+      "Bash(timeout 12 npx vite build)"
+    ]
+  }
+}
