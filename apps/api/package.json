@@ -1,0 +1,12 @@
+{
+  "name": "@cfweb/api",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "build": "tsc",
+    "lint": "eslint .",
+    "test": "node --experimental-vm-modules node_modules/.bin/jest",
+    "clean": "rm -rf dist .turbo"
+  }
+}
