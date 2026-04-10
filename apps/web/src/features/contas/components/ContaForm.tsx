@@ -60,12 +60,12 @@ const checkClass = "flex items-center gap-2 text-sm text-slate-700 dark:text-sla
 export function ContaForm({ conta, defaultTipo = 'P', onSuccess, onCancel }: ContaFormProps) {
   const qc = useQueryClient();
 
-  const { data: membros = [] } = useQuery<MembroFamilia[]>({
+  const { data: membros = [], isSuccess: membrosOk } = useQuery<MembroFamilia[]>({
     queryKey: ['membros'],
     queryFn: async () => (await api.get('/membros')).data,
   });
 
-  const { data: credores = [] } = useQuery<Credor[]>({
+  const { data: credores = [], isSuccess: credoresOk } = useQuery<Credor[]>({
     queryKey: ['credores'],
     queryFn: async () => (await api.get('/credores')).data,
   });
@@ -100,8 +100,9 @@ export function ContaForm({ conta, defaultTipo = 'P', onSuccess, onCancel }: Con
     },
   });
 
+  // Só faz reset quando os dados de suporte (membros, credores) já carregaram
   useEffect(() => {
-    if (conta) {
+    if (conta && membrosOk && credoresOk) {
       reset({
         descricao: conta.descricao,
         valor: conta.valor,
@@ -117,7 +118,7 @@ export function ContaForm({ conta, defaultTipo = 'P', onSuccess, onCancel }: Con
         tags: conta.contatag?.map((ct) => ct.tags?.idtags).filter(Boolean) as number[] ?? [],
       });
     }
-  }, [conta, reset]);
+  }, [conta, membrosOk, credoresOk, reset]);
 
   function onSubmit(data: FormData) {
     const payload: ContaFormData = {

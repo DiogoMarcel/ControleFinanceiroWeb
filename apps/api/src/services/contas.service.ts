@@ -32,6 +32,21 @@ export function listContas(filters?: { tipoconta?: string; id_membrofamilia?: nu
   });
 }
 
+export function toggleMarcado(id: number, marcado: boolean) {
+  return prisma.conta.update({
+    where: { idconta: id },
+    data: { marcado },
+    select: { idconta: true, marcado: true },
+  });
+}
+
+export function reiniciarMarcadas(tipoconta: 'P' | 'R') {
+  return prisma.conta.updateMany({
+    where: { tipoconta, marcado: true },
+    data: { marcado: false },
+  });
+}
+
 export function getConta(id: number) {
   return prisma.conta.findUnique({
     where: { idconta: id },

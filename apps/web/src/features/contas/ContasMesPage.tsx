@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useCallback } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Plus, RotateCcw, CreditCard, Repeat, FileText, Calendar, Building2, Pencil, Trash2 } from 'lucide-react';
 import { formatCurrency } from '@/lib/format';
@@ -14,6 +14,7 @@ interface ContaItem {
   descricao: string;
   valor: number;
   tipoconta: 'P' | 'R';
+  marcado: boolean;
   debitacartao: boolean | null;
   debitoauto: boolean | null;
   pagamentomanual: boolean | null;
@@ -28,24 +29,6 @@ interface ContaItem {
 }
 
 type Aba = 'P' | 'R';
-
-// ── localStorage helpers ────────────────────────────────────────────────────
-
-function storageKey(aba: Aba) { return `contas-marcadas-${aba}`; }
-
-function loadMarcadas(aba: Aba): Set<number> {
-  try {
-    const raw = localStorage.getItem(storageKey(aba));
-    if (!raw) return new Set();
-    return new Set(JSON.parse(raw) as number[]);
-  } catch {
-    return new Set();
-  }
-}
-
-function saveMarcadas(aba: Aba, marcadas: Set<number>) {
-  localStorage.setItem(storageKey(aba), JSON.stringify([...marcadas]));
-}
 
 // ── Componentes internos ───────────────────────────────────────────────────
 
@@ -81,8 +64,6 @@ function ResumoBar({ total, marcado, aba }: { total: number; marcado: number; ab
   );
 }
 
-// ── Modal reutilizável ─────────────────────────────────────────────────────
-
 function Modal({ title, onClose, children }: { title: string; onClose: () => void; children: React.ReactNode }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
@@ -106,40 +87,55 @@ export function ContasMesPage() {
   const qc = useQueryClient();
 
   const [aba, setAba] = useState<Aba>('P');
-
-  // Marcadas: carrega do localStorage na inicialização, persiste a cada mudança
-  const [marcadas, setMarcadas] = useState<Set<number>>(() => loadMarcadas('P'));
-
-  // Ao trocar de aba, carrega as marcadas daquela aba (sem apagar a outra)
-  function trocarAba(novaAba: Aba) {
-    setAba(novaAba);
-    setMarcadas(loadMarcadas(novaAba));
-  }
-
-  // Persiste no localStorage sempre que marcadas ou aba mudarem
-  useEffect(() => {
-    saveMarcadas(aba, marcadas);
-  }, [aba, marcadas]);
-
-  // Modal estados
-  const [modalNova, setModalNova]         = useState(false);
-  const [editandoConta, setEditandoConta] = useState<ContaItem | null>(null);
-  const [deletandoConta, setDeletandoConta] = useState<ContaItem | null>(null);
-  const [erroDelete, setErroDelete]       = useState('');
+  const [modalNova, setModalNova]             = useState(false);
+  const [editandoConta, setEditandoConta]     = useState<ContaItem | null>(null);
+  const [deletandoConta, setDeletandoConta]   = useState<ContaItem | null>(null);
+  const [erroDelete, setErroDelete]           = useState('');
 
   const { data: contas = [], isLoading, refetch } = useQuery<ContaItem[]>({
     queryKey: ['contas'],
     queryFn: async () => (await api.get('/contas')).data,
   });
 
+  // Mutação de toggle — atualiza cache otimisticamente
+  const toggleMutation = useMutation({
+    mutationFn: ({ id, marcado }: { id: number; marcado: boolean }) =>
+      api.patch(`/contas/${id}/marcar`, { marcado }),
+    onMutate: async ({ id, marcado }) => {
+      await qc.cancelQueries({ queryKey: ['contas'] });
+      const prev = qc.getQueryData<ContaItem[]>(['contas']);
+      qc.setQueryData<ContaItem[]>(['contas'], (old) =>
+        old?.map((c) => c.idconta === id ? { ...c, marcado } : c) ?? []
+      );
+      return { prev };
+    },
+    onError: (_err, _vars, ctx) => {
+      if (ctx?.prev) qc.setQueryData(['contas'], ctx.prev);
+    },
+    onSettled: () => qc.invalidateQueries({ queryKey: ['contas'] }),
+  });
+
+  // Mutação de reiniciar — zera todas marcadas da aba atual
+  const reiniciarMutation = useMutation({
+    mutationFn: (tipoconta: Aba) => api.post('/contas/reiniciar', { tipoconta }),
+    onMutate: async (tipoconta) => {
+      await qc.cancelQueries({ queryKey: ['contas'] });
+      const prev = qc.getQueryData<ContaItem[]>(['contas']);
+      qc.setQueryData<ContaItem[]>(['contas'], (old) =>
+        old?.map((c) => c.tipoconta === tipoconta ? { ...c, marcado: false } : c) ?? []
+      );
+      return { prev };
+    },
+    onError: (_err, _vars, ctx) => {
+      if (ctx?.prev) qc.setQueryData(['contas'], ctx.prev);
+    },
+    onSettled: () => qc.invalidateQueries({ queryKey: ['contas'] }),
+  });
+
   const deleteMutation = useMutation({
     mutationFn: (id: number) => api.delete(`/contas/${id}`),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['contas'] });
-      // Remove a conta das marcadas se estava marcada
-      if (deletandoConta) {
-        setMarcadas((prev) => { const next = new Set(prev); next.delete(deletandoConta.idconta); return next; });
-      }
       setDeletandoConta(null);
       setErroDelete('');
     },
@@ -149,11 +145,8 @@ export function ContasMesPage() {
     },
   });
 
-  // Filtra por aba (tipo conta)
-  const porTipo = useMemo(
-    () => contas.filter((c) => c.tipoconta === aba),
-    [contas, aba],
-  );
+  // Filtra por aba
+  const porTipo = useMemo(() => contas.filter((c) => c.tipoconta === aba), [contas, aba]);
 
   // Agrupa por membro
   const grupos = useMemo(() => {
@@ -166,26 +159,16 @@ export function ContasMesPage() {
     return map;
   }, [porTipo]);
 
-  // Totais em tempo real
-  const total   = porTipo.reduce((s, c) => s + c.valor, 0);
-  const marcado = porTipo
-    .filter((c) => marcadas.has(c.idconta))
-    .reduce((s, c) => s + c.valor, 0);
+  const total       = porTipo.reduce((s, c) => s + c.valor, 0);
+  const totalMarcado = porTipo.filter((c) => c.marcado).reduce((s, c) => s + c.valor, 0);
+  const qtdMarcadas = porTipo.filter((c) => c.marcado).length;
 
-  const toggleMarca = useCallback((id: number) => {
-    setMarcadas((prev) => {
-      const next = new Set(prev);
-      next.has(id) ? next.delete(id) : next.add(id);
-      return next;
-    });
-  }, []);
-
-  function reiniciar() {
-    setMarcadas(new Set());
-  }
+  const toggleMarca = useCallback((conta: ContaItem, e: React.ChangeEvent<HTMLInputElement>) => {
+    toggleMutation.mutate({ id: conta.idconta, marcado: e.target.checked });
+  }, [toggleMutation]);
 
   function abrirEditar(conta: ContaItem, e: React.MouseEvent) {
-    e.preventDefault(); // evita acionar o label/checkbox
+    e.preventDefault();
     e.stopPropagation();
     setEditandoConta(conta);
   }
@@ -208,13 +191,14 @@ export function ContasMesPage() {
           </p>
         </div>
         <div className="flex gap-2">
-          {marcadas.size > 0 && (
+          {qtdMarcadas > 0 && (
             <button
-              onClick={reiniciar}
-              className="flex items-center gap-1.5 px-3 py-2 text-sm rounded-lg border border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
+              onClick={() => reiniciarMutation.mutate(aba)}
+              disabled={reiniciarMutation.isPending}
+              className="flex items-center gap-1.5 px-3 py-2 text-sm rounded-lg border border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors disabled:opacity-50"
             >
               <RotateCcw className="w-4 h-4" />
-              Reiniciar ({marcadas.size})
+              Reiniciar ({qtdMarcadas})
             </button>
           )}
           {isAdmin && (
@@ -230,14 +214,14 @@ export function ContasMesPage() {
       </div>
 
       {/* Resumo em tempo real */}
-      <ResumoBar total={total} marcado={marcado} aba={aba} />
+      <ResumoBar total={total} marcado={totalMarcado} aba={aba} />
 
       {/* Abas */}
       <div className="flex rounded-lg border border-slate-200 dark:border-slate-700 overflow-hidden self-start">
         {(['P', 'R'] as Aba[]).map((t) => (
           <button
             key={t}
-            onClick={() => trocarAba(t)}
+            onClick={() => setAba(t)}
             className={`px-5 py-2 text-sm font-medium transition-colors ${
               aba === t
                 ? t === 'P' ? 'bg-red-500 text-white' : 'bg-emerald-500 text-white'
@@ -270,10 +254,8 @@ export function ContasMesPage() {
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 items-start">
           {Array.from(grupos.entries()).map(([membro, items]) => {
-            const totalGrupo = items.reduce((s, c) => s + c.valor, 0);
-            const marcadoGrupo = items
-              .filter((c) => marcadas.has(c.idconta))
-              .reduce((s, c) => s + c.valor, 0);
+            const totalGrupo   = items.reduce((s, c) => s + c.valor, 0);
+            const marcadoGrupo = items.filter((c) => c.marcado).reduce((s, c) => s + c.valor, 0);
 
             return (
               <div key={membro} className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-4">
@@ -296,56 +278,52 @@ export function ContasMesPage() {
 
                 {/* Linhas */}
                 <div className="divide-y divide-slate-100 dark:divide-slate-700/40">
-                  {items.map((c) => {
-                    const checked = marcadas.has(c.idconta);
-                    return (
-                      <label
-                        key={c.idconta}
-                        className={cn(
-                          'flex items-center gap-2.5 py-2 cursor-pointer group transition-colors rounded-sm',
-                          checked && 'opacity-50',
-                        )}
-                      >
-                        <input
-                          type="checkbox"
-                          checked={checked}
-                          onChange={() => toggleMarca(c.idconta)}
-                          className="w-4 h-4 rounded border-slate-300 text-emerald-500 focus:ring-emerald-500 flex-shrink-0"
-                        />
-                        <span className={cn(
-                          'flex-1 text-sm text-slate-700 dark:text-slate-300 truncate',
-                          checked && 'line-through',
-                        )}>
-                          {c.descricao}
-                        </span>
-                        <ContaIcones conta={c} />
-                        <span className={cn(
-                          'text-sm font-semibold tabular-nums flex-shrink-0',
-                          checked ? 'text-emerald-600 dark:text-emerald-400'
+                  {items.map((c) => (
+                    <label
+                      key={c.idconta}
+                      className={cn(
+                        'flex items-center gap-2.5 py-2 cursor-pointer group transition-colors rounded-sm',
+                        c.marcado && 'opacity-50',
+                      )}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={c.marcado}
+                        onChange={(e) => toggleMarca(c, e)}
+                        className="w-4 h-4 rounded border-slate-300 text-emerald-500 focus:ring-emerald-500 flex-shrink-0"
+                      />
+                      <span className={cn(
+                        'flex-1 text-sm text-slate-700 dark:text-slate-300 truncate',
+                        c.marcado && 'line-through',
+                      )}>
+                        {c.descricao}
+                      </span>
+                      <ContaIcones conta={c} />
+                      <span className={cn(
+                        'text-sm font-semibold tabular-nums flex-shrink-0',
+                        c.marcado ? 'text-emerald-600 dark:text-emerald-400'
                                   : 'text-slate-800 dark:text-slate-200',
-                        )}>
-                          {formatCurrency(c.valor)}
+                      )}>
+                        {formatCurrency(c.valor)}
+                      </span>
+                      {isAdmin && (
+                        <span className="flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
+                          <button
+                            onClick={(e) => abrirEditar(c, e)}
+                            className="p-1 rounded text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20"
+                          >
+                            <Pencil className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            onClick={(e) => abrirDeletar(c, e)}
+                            className="p-1 rounded text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
                         </span>
-                        {/* Botões de ação — visíveis no hover, só para admin */}
-                        {isAdmin && (
-                          <span className="flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
-                            <button
-                              onClick={(e) => abrirEditar(c, e)}
-                              className="p-1 rounded text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20"
-                            >
-                              <Pencil className="w-3.5 h-3.5" />
-                            </button>
-                            <button
-                              onClick={(e) => abrirDeletar(c, e)}
-                              className="p-1 rounded text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
-                          </span>
-                        )}
-                      </label>
-                    );
-                  })}
+                      )}
+                    </label>
+                  ))}
                 </div>
               </div>
             );

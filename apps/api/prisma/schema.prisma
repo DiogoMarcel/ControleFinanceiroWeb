@@ -87,6 +87,7 @@ model conta {
   pagamentomanual  Boolean?          @default(false)
   qtdparcela       Int?
   debitoauto       Boolean?          @default(false)
+  marcado          Boolean           @default(false)
   credor           credor?           @relation(fields: [id_credor], references: [idcredor], onDelete: NoAction, onUpdate: NoAction, map: "fk_conta_credor")
   membrofamilia    membrofamilia?    @relation(fields: [id_membrofamilia], references: [idmembrofamilia], onDelete: NoAction, onUpdate: NoAction, map: "fk_conta_membrofamilia")
   contapagamentos  contapagamentos[]

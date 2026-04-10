@@ -8,6 +8,8 @@ import {
   deleteConta,
   addTagConta,
   removeTagConta,
+  toggleMarcado,
+  reiniciarMarcadas,
 } from '../services/contas.service.js';
 
 type IdParam = { Params: { id: string } };
@@ -72,6 +74,23 @@ export async function contasRoutes(app: FastifyInstance): Promise<void> {
     if (!isAdmin(req, reply)) return;
     try {
       await deleteConta(Number(req.params.id));
+      return reply.code(204).send();
+    } catch (err) { handleError(err, reply); }
+  });
+
+  // PATCH /contas/:id/marcar — qualquer usuário autenticado
+  app.patch<IdParam & { Body: { marcado: boolean } }>('/contas/:id/marcar', async (req, reply) => {
+    try {
+      const result = await toggleMarcado(Number(req.params.id), req.body.marcado);
+      return reply.send(result);
+    } catch (err) { handleError(err, reply); }
+  });
+
+  // POST /contas/reiniciar — qualquer usuário autenticado
+  app.post<{ Body: { tipoconta: string } }>('/contas/reiniciar', async (req, reply) => {
+    try {
+      const { tipoconta } = req.body as { tipoconta: 'P' | 'R' };
+      await reiniciarMarcadas(tipoconta);
       return reply.code(204).send();
     } catch (err) { handleError(err, reply); }
   });
