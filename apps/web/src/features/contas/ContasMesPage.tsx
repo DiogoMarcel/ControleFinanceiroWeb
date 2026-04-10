@@ -1,6 +1,6 @@
-import { useState, useMemo } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { Plus, RotateCcw, CreditCard, Repeat, FileText, Calendar, Building2 } from 'lucide-react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { Plus, RotateCcw, CreditCard, Repeat, FileText, Calendar, Building2, Pencil, Trash2 } from 'lucide-react';
 import { formatCurrency } from '@/lib/format';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
@@ -13,28 +13,50 @@ interface ContaItem {
   idconta: number;
   descricao: string;
   valor: number;
-  tipoconta: string;
+  tipoconta: 'P' | 'R';
   debitacartao: boolean | null;
   debitoauto: boolean | null;
   pagamentomanual: boolean | null;
   pertenceafolha: boolean | null;
   contaanual: boolean | null;
+  id_membrofamilia: number | null;
+  id_credor: number | null;
+  qtdparcela: number | null;
   membrofamilia: { idmembrofamilia: number; nome: string } | null;
   credor: { idcredor: number; nome: string } | null;
+  contatag?: { tags: { idtags: number } | null }[];
 }
 
 type Aba = 'P' | 'R';
+
+// ── localStorage helpers ────────────────────────────────────────────────────
+
+function storageKey(aba: Aba) { return `contas-marcadas-${aba}`; }
+
+function loadMarcadas(aba: Aba): Set<number> {
+  try {
+    const raw = localStorage.getItem(storageKey(aba));
+    if (!raw) return new Set();
+    return new Set(JSON.parse(raw) as number[]);
+  } catch {
+    return new Set();
+  }
+}
+
+function saveMarcadas(aba: Aba, marcadas: Set<number>) {
+  localStorage.setItem(storageKey(aba), JSON.stringify([...marcadas]));
+}
 
 // ── Componentes internos ───────────────────────────────────────────────────
 
 function ContaIcones({ conta }: { conta: ContaItem }) {
   return (
     <span className="flex items-center gap-1 flex-shrink-0">
-      {conta.debitacartao   && <CreditCard  className="w-3.5 h-3.5 text-blue-400"   aria-label="Débita cartão" />}
-      {conta.debitoauto     && <Repeat      className="w-3.5 h-3.5 text-violet-400" aria-label="Débito automático" />}
-      {conta.pagamentomanual && <FileText   className="w-3.5 h-3.5 text-slate-400"  aria-label="Pagamento manual" />}
-      {conta.contaanual     && <Calendar    className="w-3.5 h-3.5 text-amber-400"  aria-label="Conta anual" />}
-      {conta.pertenceafolha && <Building2   className="w-3.5 h-3.5 text-indigo-400" aria-label="Pertence à folha" />}
+      {conta.debitacartao    && <CreditCard  className="w-3.5 h-3.5 text-blue-400"   aria-label="Débita cartão" />}
+      {conta.debitoauto      && <Repeat      className="w-3.5 h-3.5 text-violet-400" aria-label="Débito automático" />}
+      {conta.pagamentomanual && <FileText    className="w-3.5 h-3.5 text-slate-400"  aria-label="Pagamento manual" />}
+      {conta.contaanual      && <Calendar    className="w-3.5 h-3.5 text-amber-400"  aria-label="Conta anual" />}
+      {conta.pertenceafolha  && <Building2   className="w-3.5 h-3.5 text-indigo-400" aria-label="Pertence à folha" />}
     </span>
   );
 }
@@ -59,19 +81,72 @@ function ResumoBar({ total, marcado, aba }: { total: number; marcado: number; ab
   );
 }
 
+// ── Modal reutilizável ─────────────────────────────────────────────────────
+
+function Modal({ title, onClose, children }: { title: string; onClose: () => void; children: React.ReactNode }) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+      <div className="bg-white dark:bg-slate-800 rounded-xl shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-slate-200 dark:border-slate-700">
+          <h2 className="text-base font-semibold text-slate-900 dark:text-white">{title}</h2>
+          <button onClick={onClose}
+            className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-xl leading-none">×</button>
+        </div>
+        <div className="p-5">{children}</div>
+      </div>
+    </div>
+  );
+}
+
 // ── Página principal ───────────────────────────────────────────────────────
 
 export function ContasMesPage() {
   const { user } = useAuth();
   const isAdmin = user?.role === 'admin';
+  const qc = useQueryClient();
 
   const [aba, setAba] = useState<Aba>('P');
-  const [marcadas, setMarcadas] = useState<Set<number>>(new Set());
-  const [modalAberto, setModalAberto] = useState(false);
+
+  // Marcadas: carrega do localStorage na inicialização, persiste a cada mudança
+  const [marcadas, setMarcadas] = useState<Set<number>>(() => loadMarcadas('P'));
+
+  // Ao trocar de aba, carrega as marcadas daquela aba (sem apagar a outra)
+  function trocarAba(novaAba: Aba) {
+    setAba(novaAba);
+    setMarcadas(loadMarcadas(novaAba));
+  }
+
+  // Persiste no localStorage sempre que marcadas ou aba mudarem
+  useEffect(() => {
+    saveMarcadas(aba, marcadas);
+  }, [aba, marcadas]);
+
+  // Modal estados
+  const [modalNova, setModalNova]         = useState(false);
+  const [editandoConta, setEditandoConta] = useState<ContaItem | null>(null);
+  const [deletandoConta, setDeletandoConta] = useState<ContaItem | null>(null);
+  const [erroDelete, setErroDelete]       = useState('');
 
   const { data: contas = [], isLoading, refetch } = useQuery<ContaItem[]>({
     queryKey: ['contas'],
     queryFn: async () => (await api.get('/contas')).data,
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: number) => api.delete(`/contas/${id}`),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['contas'] });
+      // Remove a conta das marcadas se estava marcada
+      if (deletandoConta) {
+        setMarcadas((prev) => { const next = new Set(prev); next.delete(deletandoConta.idconta); return next; });
+      }
+      setDeletandoConta(null);
+      setErroDelete('');
+    },
+    onError: (e: unknown) => {
+      const msg = (e as { response?: { data?: { error?: string } } })?.response?.data?.error ?? 'Erro ao excluir';
+      setErroDelete(msg);
+    },
   });
 
   // Filtra por aba (tipo conta)
@@ -97,16 +172,29 @@ export function ContasMesPage() {
     .filter((c) => marcadas.has(c.idconta))
     .reduce((s, c) => s + c.valor, 0);
 
-  function toggleMarca(id: number) {
+  const toggleMarca = useCallback((id: number) => {
     setMarcadas((prev) => {
       const next = new Set(prev);
       next.has(id) ? next.delete(id) : next.add(id);
       return next;
     });
-  }
+  }, []);
 
   function reiniciar() {
     setMarcadas(new Set());
+  }
+
+  function abrirEditar(conta: ContaItem, e: React.MouseEvent) {
+    e.preventDefault(); // evita acionar o label/checkbox
+    e.stopPropagation();
+    setEditandoConta(conta);
+  }
+
+  function abrirDeletar(conta: ContaItem, e: React.MouseEvent) {
+    e.preventDefault();
+    e.stopPropagation();
+    setDeletandoConta(conta);
+    setErroDelete('');
   }
 
   return (
@@ -131,7 +219,7 @@ export function ContasMesPage() {
           )}
           {isAdmin && (
             <button
-              onClick={() => setModalAberto(true)}
+              onClick={() => setModalNova(true)}
               className="flex items-center gap-1.5 px-3 py-2 text-sm rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-medium transition-colors"
             >
               <Plus className="w-4 h-4" />
@@ -149,7 +237,7 @@ export function ContasMesPage() {
         {(['P', 'R'] as Aba[]).map((t) => (
           <button
             key={t}
-            onClick={() => { setAba(t); setMarcadas(new Set()); }}
+            onClick={() => trocarAba(t)}
             className={`px-5 py-2 text-sm font-medium transition-colors ${
               aba === t
                 ? t === 'P' ? 'bg-red-500 text-white' : 'bg-emerald-500 text-white'
@@ -238,6 +326,23 @@ export function ContasMesPage() {
                         )}>
                           {formatCurrency(c.valor)}
                         </span>
+                        {/* Botões de ação — visíveis no hover, só para admin */}
+                        {isAdmin && (
+                          <span className="flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
+                            <button
+                              onClick={(e) => abrirEditar(c, e)}
+                              className="p-1 rounded text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20"
+                            >
+                              <Pencil className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                              onClick={(e) => abrirDeletar(c, e)}
+                              className="p-1 rounded text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </span>
+                        )}
                       </label>
                     );
                   })}
@@ -249,20 +354,61 @@ export function ContasMesPage() {
       )}
 
       {/* Modal nova conta */}
-      {modalAberto && (
+      {modalNova && (
+        <Modal title="Nova Conta" onClose={() => setModalNova(false)}>
+          <ContaForm
+            defaultTipo={aba}
+            onSuccess={() => { setModalNova(false); refetch(); }}
+            onCancel={() => setModalNova(false)}
+          />
+        </Modal>
+      )}
+
+      {/* Modal editar conta */}
+      {editandoConta && (
+        <Modal title="Editar Conta" onClose={() => setEditandoConta(null)}>
+          <ContaForm
+            conta={{
+              ...editandoConta,
+              contaanual:      editandoConta.contaanual      ?? undefined,
+              pertenceafolha:  editandoConta.pertenceafolha  ?? undefined,
+              debitacartao:    editandoConta.debitacartao    ?? undefined,
+              debitoauto:      editandoConta.debitoauto      ?? undefined,
+              pagamentomanual: editandoConta.pagamentomanual ?? undefined,
+            }}
+            onSuccess={() => { setEditandoConta(null); refetch(); }}
+            onCancel={() => setEditandoConta(null)}
+          />
+        </Modal>
+      )}
+
+      {/* Modal confirmar exclusão */}
+      {deletandoConta && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="bg-white dark:bg-slate-800 rounded-xl shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between px-5 py-4 border-b border-slate-200 dark:border-slate-700">
-              <h2 className="text-base font-semibold text-slate-900 dark:text-white">Nova Conta</h2>
-              <button onClick={() => setModalAberto(false)}
-                className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-xl leading-none">×</button>
+          <div className="bg-white dark:bg-slate-800 rounded-xl shadow-xl w-full max-w-sm p-6 flex flex-col gap-4">
+            <div>
+              <h2 className="text-base font-semibold text-slate-900 dark:text-white">Excluir conta</h2>
+              <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+                Tem certeza que deseja excluir <strong className="text-slate-700 dark:text-slate-200">{deletandoConta.descricao}</strong>?
+              </p>
             </div>
-            <div className="p-5">
-              <ContaForm
-                defaultTipo={aba}
-                onSuccess={() => { setModalAberto(false); refetch(); }}
-                onCancel={() => setModalAberto(false)}
-              />
+            {erroDelete && (
+              <p className="text-xs text-red-500 bg-red-50 dark:bg-red-900/20 rounded-lg px-3 py-2">{erroDelete}</p>
+            )}
+            <div className="flex justify-end gap-2">
+              <button
+                onClick={() => { setDeletandoConta(null); setErroDelete(''); }}
+                className="px-4 py-2 text-sm rounded-lg border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={() => deleteMutation.mutate(deletandoConta.idconta)}
+                disabled={deleteMutation.isPending}
+                className="px-4 py-2 text-sm rounded-lg bg-red-600 hover:bg-red-700 text-white font-medium transition-colors disabled:opacity-50"
+              >
+                {deleteMutation.isPending ? 'Excluindo...' : 'Excluir'}
+              </button>
             </div>
           </div>
         </div>
