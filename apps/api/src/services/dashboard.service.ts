@@ -56,7 +56,7 @@ export async function getDashboardData(): Promise<DashboardData> {
     // FGTS
     prisma.saldofgts.aggregate({ _sum: { saldo: true } }),
 
-    // Evolução histórica do saldo total (último registro de cada mês)
+    // Evolução histórica do saldo total (último registro NÃO-NULO de cada mês)
     prisma.$queryRaw<EvolucaoRow[]>`
       SELECT mes, saldototal FROM (
         SELECT
@@ -68,14 +68,16 @@ export async function getDashboardData(): Promise<DashboardData> {
           ) AS rn
         FROM saldodetalhadoportador
         WHERE dataalteracao IS NOT NULL
+          AND saldototal IS NOT NULL
       ) t
       WHERE rn = 1
       ORDER BY mes ASC
     `,
 
-    // Saldo total canônico: último registro do histórico detalhado
-    // (mantido por triggers, exclui contacapital — não entra no saldo operacional)
+    // Saldo total canônico: último registro NÃO-NULO do histórico detalhado
+    // (mantido por triggers; registros com saldototal=null são parciais/em-progresso)
     prisma.saldodetalhadoportador.findFirst({
+      where: { saldototal: { not: null } },
       orderBy: { idsaldodetalhadoportador: 'desc' },
       select: { saldototal: true },
     }),
