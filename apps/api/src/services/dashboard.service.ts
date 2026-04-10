@@ -81,24 +81,30 @@ export async function getDashboardData(): Promise<DashboardData> {
     }),
   ]);
 
-  // Saldo Total = valor canônico do histórico detalhado (mantido por trigger, exclui contacapital)
-  const saldosBruto = portadores
+  // Todos os saldos não-nulos
+  const todosSaldos = portadores
     .map((p) => p.saldoportador)
-    .filter((s): s is NonNullable<typeof s> => s !== null && s !== undefined)
-    .filter((s) => !s.contacapital);
-  const saldoTotalBruto = saldosBruto.reduce((sum, s) => sum + (s.valor ?? 0), 0);
-  const saldoTotal = ultimoDetalhado?.saldototal
-    ? Number(ultimoDetalhado.saldototal)
-    : saldoTotalBruto;
+    .filter((s): s is NonNullable<typeof s> => s !== null && s !== undefined);
 
-  // Valor reservado: soma ao vivo de portadores reservados (excluindo capital)
-  const valorReservado = saldosBruto
+  // Saldo Total = valor canônico do trigger (exclui contacapital por design do trigger)
+  // Fallback: soma ao vivo excluindo contacapital (s.contacapital !== true cobre null e false)
+  const saldoTotalFallback = todosSaldos
+    .filter((s) => s.contacapital !== true)
+    .reduce((sum, s) => sum + (s.valor ?? 0), 0);
+  const saldoTotal = ultimoDetalhado?.saldototal != null
+    ? Number(ultimoDetalhado.saldototal)
+    : saldoTotalFallback;
+
+  // Portadores operacionais: não-capital (contacapital !== true cobre null e false)
+  const saldosOperacionais = todosSaldos.filter((s) => s.contacapital !== true);
+
+  // Valor reservado: portadores operacionais marcados como reservado
+  const valorReservado = saldosOperacionais
     .filter((s) => s.reservado === true)
     .reduce((sum, s) => sum + (s.valor ?? 0), 0);
 
-  // Saldo Bancário = soma direta dos portadores operacionais (não reservados, não capital)
-  // Calculado ao vivo para evitar dessincronização com o trigger
-  const saldoBancario = saldosBruto
+  // Saldo Bancário: portadores operacionais NÃO reservados (ao vivo, mesma fonte)
+  const saldoBancario = saldosOperacionais
     .filter((s) => s.reservado !== true)
     .reduce((sum, s) => sum + (s.valor ?? 0), 0);
 
