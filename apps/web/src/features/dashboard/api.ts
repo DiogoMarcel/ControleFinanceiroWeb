@@ -7,6 +7,8 @@ export interface PortadorResumo {
   tipo: string;
   saldo: number;
   reservado: boolean;
+  contaCapital: boolean;
+  membroId: number;
   membroNome: string;
 }
 
@@ -21,6 +23,7 @@ export interface DashboardData {
   valorReservado: number;
   totalContasPagar: number;
   totalContasReceber: number;
+  saldoLiquido: number;
   saldoFgts: number;
   saldoGeralComFgts: number;
   portadores: PortadorResumo[];

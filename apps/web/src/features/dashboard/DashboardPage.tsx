@@ -8,7 +8,8 @@ export function DashboardPage() {
   const { user } = useAuth();
   const { data, isLoading, isError } = useDashboard();
 
-  const primeiroNome = user?.displayName?.split(' ')[0] ?? 'Olá';
+  const primeiroNome =
+    user?.displayName?.split(' ')[0] ?? user?.email?.split('@')[0] ?? 'usuário';
 
   return (
     <div className="flex flex-col gap-6">
@@ -28,18 +29,14 @@ export function DashboardPage() {
         </div>
       )}
 
-      {/* Layout principal: resumo + portadores lado a lado em desktop */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <div className="lg:col-span-1">
-          <ResumoFinanceiro data={data} loading={isLoading} />
-        </div>
-        <div className="lg:col-span-2">
-          <PortadoresList portadores={data?.portadores ?? []} loading={isLoading} />
-        </div>
-      </div>
+      {/* Resumo financeiro (largura total) */}
+      <ResumoFinanceiro data={data} loading={isLoading} />
 
       {/* Gráfico de evolução */}
       <EvolucaoSaldo data={data?.evolucaoSaldo ?? []} loading={isLoading} />
+
+      {/* Portadores agrupados por membro — abaixo do gráfico */}
+      <PortadoresList portadores={data?.portadores ?? []} loading={isLoading} />
     </div>
   );
 }

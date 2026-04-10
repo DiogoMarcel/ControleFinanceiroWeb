@@ -3,6 +3,9 @@ import { LoginPage } from '@/features/auth/LoginPage';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { ProtectedRoute } from '@/components/layout/ProtectedRoute';
 import { DashboardPage } from '@/features/dashboard/DashboardPage';
+import { PortadoresPage } from '@/features/portadores/PortadoresPage';
+import { ContasMesPage } from '@/features/contas/ContasMesPage';
+import { ConfiguracoesPage } from '@/features/configuracoes/ConfiguracoesPage';
 
 function Placeholder({ title }: { title: string }) {
   return (
@@ -22,14 +25,14 @@ export function AppRouter() {
         <Route element={<AppLayout />}>
         <Route index element={<Navigate to="/dashboard" replace />} />
         <Route path="/dashboard" element={<DashboardPage />} />
-        <Route path="/contas" element={<Placeholder title="Contas do Mês" />} />
-        <Route path="/portadores" element={<Placeholder title="Portadores" />} />
+        <Route path="/contas" element={<ContasMesPage />} />
+        <Route path="/portadores" element={<PortadoresPage />} />
         <Route path="/cartoes" element={<Placeholder title="Cartões" />} />
         <Route path="/relatorios" element={<Placeholder title="Relatórios" />} />
         <Route path="/veiculos" element={<Placeholder title="Veículos" />} />
         <Route path="/alugueis" element={<Placeholder title="Aluguéis" />} />
         <Route path="/fgts" element={<Placeholder title="FGTS" />} />
-        <Route path="/configuracoes" element={<Placeholder title="Configurações" />} />
+        <Route path="/configuracoes" element={<ConfiguracoesPage />} />
         </Route>
       </Route>
 

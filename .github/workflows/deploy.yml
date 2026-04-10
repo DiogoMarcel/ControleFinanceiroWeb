@@ -1,0 +1,73 @@
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+
+# Pré-requisito: configurar os secrets abaixo no GitHub
+# Settings → Secrets and variables → Actions → New repository secret
+#
+# Secrets necessários:
+#   VITE_FIREBASE_API_KEY          — chave da API do Firebase (web)
+#   VITE_FIREBASE_AUTH_DOMAIN      — ex: controle-financeiro-web-5ab5b.firebaseapp.com
+#   VITE_FIREBASE_PROJECT_ID       — ex: controle-financeiro-web-5ab5b
+#   VITE_FIREBASE_APP_ID           — app ID do Firebase
+#   VITE_API_URL                   — URL da API em produção
+#   VERCEL_TOKEN                   — token em vercel.com/account/tokens
+#   VERCEL_ORG_ID                  — em .vercel/project.json após `vercel link`
+#   VERCEL_PROJECT_ID_WEB          — id do projeto web no Vercel
+#   RAILWAY_TOKEN                  — token em railway.app/account/tokens
+#   RAILWAY_SERVICE_ID             — ID do serviço da API no Railway
+
+jobs:
+  deploy-web:
+    name: Deploy Web → Vercel
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build web
+        run: npm run build --workspace=apps/web
+        env:
+          VITE_API_URL: ${{ secrets.VITE_API_URL }}
+          VITE_FIREBASE_API_KEY: ${{ secrets.VITE_FIREBASE_API_KEY }}
+          VITE_FIREBASE_AUTH_DOMAIN: ${{ secrets.VITE_FIREBASE_AUTH_DOMAIN }}
+          VITE_FIREBASE_PROJECT_ID: ${{ secrets.VITE_FIREBASE_PROJECT_ID }}
+          VITE_FIREBASE_APP_ID: ${{ secrets.VITE_FIREBASE_APP_ID }}
+
+      - name: Deploy to Vercel
+        uses: amondnet/vercel-action@v25
+        with:
+          vercel-token: ${{ secrets.VERCEL_TOKEN }}
+          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID_WEB }}
+          working-directory: apps/web
+          vercel-args: '--prod'
+
+  deploy-api:
+    name: Deploy API → Railway
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Railway CLI
+        run: npm install -g @railway/cli
+
+      - name: Deploy to Railway
+        run: railway up --service ${{ secrets.RAILWAY_SERVICE_ID }}
+        working-directory: apps/api
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}

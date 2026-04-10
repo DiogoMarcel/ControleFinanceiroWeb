@@ -7,6 +7,7 @@ export interface DashboardData {
   valorReservado: number;
   totalContasPagar: number;
   totalContasReceber: number;
+  saldoLiquido: number;
   saldoFgts: number;
   saldoGeralComFgts: number;
   // Portadores individuais
@@ -21,6 +22,8 @@ export interface PortadorResumo {
   tipo: string;
   saldo: number;
   reservado: boolean;
+  contaCapital: boolean;
+  membroId: number;
   membroNome: string;
 }
 
@@ -35,19 +38,18 @@ interface EvolucaoRow {
 }
 
 export async function getDashboardData(): Promise<DashboardData> {
-  const [saldos, portadores, contas, fgts, evolucao] = await Promise.all([
-    // Todos os saldos dos portadores
-    prisma.saldoportador.findMany({ select: { valor: true, reservado: true } }),
-
+  const [portadores, contas, fgts, evolucao, ultimoDetalhado] = await Promise.all([
     // Portadores com saldo e membro
     prisma.portador.findMany({
       include: { saldoportador: true, membrofamilia: true },
       orderBy: { nomeportador: 'asc' },
     }),
 
-    // Totais de todas as contas ativas por tipo
+    // Totais de contas por tipo — excluindo contas que debitam em cartão
+    // (já contabilizadas na fatura do cartão, para evitar dupla contagem)
     prisma.conta.groupBy({
       by: ['tipoconta'],
+      where: { OR: [{ debitacartao: false }, { debitacartao: null }] },
       _sum: { valor: true },
     }),
 
@@ -70,12 +72,30 @@ export async function getDashboardData(): Promise<DashboardData> {
       WHERE rn = 1
       ORDER BY mes ASC
     `,
+
+    // Saldo total canônico: último registro do histórico detalhado
+    // (mantido por triggers, exclui contacapital — não entra no saldo operacional)
+    prisma.saldodetalhadoportador.findFirst({
+      orderBy: { idsaldodetalhadoportador: 'desc' },
+      select: { saldototal: true },
+    }),
   ]);
 
-  const saldoTotal = saldos.reduce((s, p) => s + (p.valor ?? 0), 0);
-  const valorReservado = saldos
-    .filter((p) => p.reservado === true)
-    .reduce((s, p) => s + (p.valor ?? 0), 0);
+  // Valor reservado: soma ao vivo excluindo portadores de capital
+  const saldosReservados = portadores
+    .map((p) => p.saldoportador)
+    .filter((s): s is NonNullable<typeof s> => s !== null && s !== undefined)
+    .filter((s) => s.reservado === true && !s.contacapital);
+  const valorReservado = saldosReservados.reduce((sum, s) => sum + (s.valor ?? 0), 0);
+
+  // Saldo Total = valor canônico do histórico detalhado (103.832,51)
+  const saldosBruto = portadores
+    .map((p) => p.saldoportador)
+    .filter((s): s is NonNullable<typeof s> => s !== null && s !== undefined);
+  const saldoTotalBruto = saldosBruto.reduce((sum, s) => sum + (s.valor ?? 0), 0);
+  const saldoTotal = ultimoDetalhado?.saldototal
+    ? Number(ultimoDetalhado.saldototal)
+    : saldoTotalBruto;
   const saldoBancario = saldoTotal - valorReservado;
 
   const totalPagar = contas.find((c) => c.tipoconta === 'P')?._sum.valor ?? 0;
@@ -88,6 +108,7 @@ export async function getDashboardData(): Promise<DashboardData> {
     valorReservado,
     totalContasPagar: totalPagar,
     totalContasReceber: totalReceber,
+    saldoLiquido: totalReceber - totalPagar,
     saldoFgts,
     saldoGeralComFgts: saldoTotal + saldoFgts,
     portadores: portadores.map((p) => ({
@@ -96,6 +117,8 @@ export async function getDashboardData(): Promise<DashboardData> {
       tipo: p.tipoconta,
       saldo: p.saldoportador?.valor ?? 0,
       reservado: p.saldoportador?.reservado === true,
+      contaCapital: p.saldoportador?.contacapital === true,
+      membroId: p.id_membrofamilia,
       membroNome: p.membrofamilia.nome,
     })),
     evolucaoSaldo: evolucao.map((r) => ({
