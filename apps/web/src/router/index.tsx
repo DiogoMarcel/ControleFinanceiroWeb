@@ -6,6 +6,7 @@ import { DashboardPage } from '@/features/dashboard/DashboardPage';
 import { PortadoresPage } from '@/features/portadores/PortadoresPage';
 import { ContasMesPage } from '@/features/contas/ContasMesPage';
 import { ConfiguracoesPage } from '@/features/configuracoes/ConfiguracoesPage';
+import { ExtratoPage } from '@/features/extrato/ExtratoPage';
 
 function Placeholder({ title }: { title: string }) {
   return (
@@ -27,6 +28,7 @@ export function AppRouter() {
         <Route path="/dashboard" element={<DashboardPage />} />
         <Route path="/contas" element={<ContasMesPage />} />
         <Route path="/portadores" element={<PortadoresPage />} />
+        <Route path="/extrato" element={<ExtratoPage />} />
         <Route path="/cartoes" element={<Placeholder title="Cartões" />} />
         <Route path="/relatorios" element={<Placeholder title="Relatórios" />} />
         <Route path="/veiculos" element={<Placeholder title="Veículos" />} />

@@ -1,13 +1,14 @@
 import { NavLink } from 'react-router-dom';
 import {
   LayoutDashboard, Receipt, Wallet, CreditCard, BarChart2,
-  Car, Building2, Briefcase, Settings, TrendingUp, X,
+  Car, Building2, Briefcase, Settings, TrendingUp, X, FileText,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const navItems = [
   { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
   { to: '/contas', icon: Receipt, label: 'Contas do Mês' },
+  { to: '/extrato', icon: FileText, label: 'Extrato' },
   { to: '/portadores', icon: Wallet, label: 'Portadores' },
   { to: '/cartoes', icon: CreditCard, label: 'Cartões' },
   { to: '/relatorios', icon: BarChart2, label: 'Relatórios' },
