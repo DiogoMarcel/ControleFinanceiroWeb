@@ -6,6 +6,7 @@ import { contasRoutes } from './contas.js';
 import { pagamentosRoutes } from './pagamentos.js';
 import { extratoRoutes } from './extrato.js';
 import { cartoesRoutes } from './cartoes.js';
+import { relatoriosRoutes } from './relatorios.js';
 
 export async function registerRoutes(app: FastifyInstance): Promise<void> {
   app.register(dashboardRoutes, { prefix: '/api/v1' });
@@ -15,4 +16,5 @@ export async function registerRoutes(app: FastifyInstance): Promise<void> {
   app.register(pagamentosRoutes, { prefix: '/api/v1' });
   app.register(extratoRoutes, { prefix: '/api/v1' });
   app.register(cartoesRoutes, { prefix: '/api/v1' });
+  app.register(relatoriosRoutes, { prefix: '/api/v1' });
 }

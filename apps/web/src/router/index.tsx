@@ -8,6 +8,7 @@ import { ContasMesPage } from '@/features/contas/ContasMesPage';
 import { ConfiguracoesPage } from '@/features/configuracoes/ConfiguracoesPage';
 import { ExtratoPage } from '@/features/extrato/ExtratoPage';
 import { CartoesPage } from '@/features/cartoes/CartoesPage';
+import { RelatoriosPage } from '@/features/relatorios/RelatoriosPage';
 
 function Placeholder({ title }: { title: string }) {
   return (
@@ -31,7 +32,7 @@ export function AppRouter() {
         <Route path="/portadores" element={<PortadoresPage />} />
         <Route path="/extrato" element={<ExtratoPage />} />
         <Route path="/cartoes" element={<CartoesPage />} />
-        <Route path="/relatorios" element={<Placeholder title="Relatórios" />} />
+        <Route path="/relatorios" element={<RelatoriosPage />} />
         <Route path="/veiculos" element={<Placeholder title="Veículos" />} />
         <Route path="/alugueis" element={<Placeholder title="Aluguéis" />} />
         <Route path="/fgts" element={<Placeholder title="FGTS" />} />
