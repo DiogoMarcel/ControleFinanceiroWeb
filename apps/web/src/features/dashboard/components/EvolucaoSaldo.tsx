@@ -9,6 +9,7 @@ import type { EvolucaoMes } from '../api';
 
 interface EvolucaoSaldoProps {
   data: EvolucaoMes[];
+  saldoAtual?: number;  // valor canônico do dashboard (substitui último ponto da série se presente)
   loading?: boolean;
 }
 
@@ -27,7 +28,7 @@ function formatMes(mes: string) {
   }
 }
 
-export function EvolucaoSaldo({ data, loading }: EvolucaoSaldoProps) {
+export function EvolucaoSaldo({ data, saldoAtual, loading }: EvolucaoSaldoProps) {
   if (loading) {
     return (
       <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-4">
@@ -44,7 +45,7 @@ export function EvolucaoSaldo({ data, loading }: EvolucaoSaldoProps) {
     colorIndex: i % COLORS.length,
   }));
 
-  const ultimoSaldo = chartData[chartData.length - 1]?.saldoTotal ?? 0;
+  const ultimoSaldo = saldoAtual ?? chartData[chartData.length - 1]?.saldoTotal ?? 0;
 
   return (
     <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-4">

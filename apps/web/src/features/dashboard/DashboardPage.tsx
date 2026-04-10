@@ -33,7 +33,7 @@ export function DashboardPage() {
       <ResumoFinanceiro data={data} loading={isLoading} />
 
       {/* Gráfico de evolução */}
-      <EvolucaoSaldo data={data?.evolucaoSaldo ?? []} loading={isLoading} />
+      <EvolucaoSaldo data={data?.evolucaoSaldo ?? []} saldoAtual={data?.saldoTotal} loading={isLoading} />
 
       {/* Portadores agrupados por membro — abaixo do gráfico */}
       <PortadoresList portadores={data?.portadores ?? []} loading={isLoading} />

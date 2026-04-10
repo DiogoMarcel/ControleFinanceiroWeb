@@ -81,22 +81,26 @@ export async function getDashboardData(): Promise<DashboardData> {
     }),
   ]);
 
-  // Valor reservado: soma ao vivo excluindo portadores de capital
-  const saldosReservados = portadores
-    .map((p) => p.saldoportador)
-    .filter((s): s is NonNullable<typeof s> => s !== null && s !== undefined)
-    .filter((s) => s.reservado === true && !s.contacapital);
-  const valorReservado = saldosReservados.reduce((sum, s) => sum + (s.valor ?? 0), 0);
-
-  // Saldo Total = valor canônico do histórico detalhado (103.832,51)
+  // Saldo Total = valor canônico do histórico detalhado (mantido por trigger, exclui contacapital)
   const saldosBruto = portadores
     .map((p) => p.saldoportador)
-    .filter((s): s is NonNullable<typeof s> => s !== null && s !== undefined);
+    .filter((s): s is NonNullable<typeof s> => s !== null && s !== undefined)
+    .filter((s) => !s.contacapital);
   const saldoTotalBruto = saldosBruto.reduce((sum, s) => sum + (s.valor ?? 0), 0);
   const saldoTotal = ultimoDetalhado?.saldototal
     ? Number(ultimoDetalhado.saldototal)
     : saldoTotalBruto;
-  const saldoBancario = saldoTotal - valorReservado;
+
+  // Valor reservado: soma ao vivo de portadores reservados (excluindo capital)
+  const valorReservado = saldosBruto
+    .filter((s) => s.reservado === true)
+    .reduce((sum, s) => sum + (s.valor ?? 0), 0);
+
+  // Saldo Bancário = soma direta dos portadores operacionais (não reservados, não capital)
+  // Calculado ao vivo para evitar dessincronização com o trigger
+  const saldoBancario = saldosBruto
+    .filter((s) => s.reservado !== true)
+    .reduce((sum, s) => sum + (s.valor ?? 0), 0);
 
   const totalPagar = contas.find((c) => c.tipoconta === 'P')?._sum.valor ?? 0;
   const totalReceber = contas.find((c) => c.tipoconta === 'R')?._sum.valor ?? 0;
