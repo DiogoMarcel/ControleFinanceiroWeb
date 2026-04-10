@@ -34,7 +34,7 @@ export async function extratoRoutes(app: FastifyInstance): Promise<void> {
 
     const registros = await prisma.saldoextrato.findMany({
       where,
-      orderBy: { datalancamento: 'desc' },
+      orderBy: { idsaldoextrato: 'desc' },
       include: {
         conta: {
           select: { descricao: true },

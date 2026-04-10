@@ -175,15 +175,15 @@ export function ExtratoPage() {
 
                   {/* Valor */}
                   <div className="md:text-right col-start-2 md:col-start-auto">
-                    <span
-                      className={
-                        item.valor >= 0
-                          ? 'text-sm font-medium text-emerald-600 dark:text-emerald-400'
-                          : 'text-sm font-medium text-red-500 dark:text-red-400'
-                      }
-                    >
-                      {item.valor >= 0 ? '+' : ''}{formatBRL(item.valor)}
-                    </span>
+                    {item.tiposaldo === 'P' ? (
+                      <span className="text-sm font-medium text-red-500 dark:text-red-400">
+                        -{formatBRL(item.valor)}
+                      </span>
+                    ) : (
+                      <span className="text-sm font-medium text-emerald-600 dark:text-emerald-400">
+                        +{formatBRL(item.valor)}
+                      </span>
+                    )}
                   </div>
 
                   {/* Saldo */}
