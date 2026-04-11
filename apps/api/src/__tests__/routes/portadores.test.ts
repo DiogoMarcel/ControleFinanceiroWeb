@@ -1,4 +1,4 @@
-import { jest } from '@jest/globals';
+import { jest, describe, it, expect, beforeAll, afterAll, beforeEach } from '@jest/globals';
 import type { FastifyInstance } from 'fastify';
 
 const mockListPortadores = jest.fn();

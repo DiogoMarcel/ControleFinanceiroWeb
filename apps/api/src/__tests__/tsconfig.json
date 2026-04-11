@@ -1,0 +1,11 @@
+{
+  "extends": "../../tsconfig.test.json",
+  "compilerOptions": {
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "target": "ES2022",
+    "isolatedModules": true,
+    "types": ["jest", "node"]
+  },
+  "include": ["./**/*"]
+}

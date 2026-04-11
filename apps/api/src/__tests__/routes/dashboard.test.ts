@@ -3,7 +3,7 @@
  * Firebase mocked via moduleNameMapper (jest config).
  * Services mocked via jest.unstable_mockModule + dynamic imports (ESM pattern).
  */
-import { jest } from '@jest/globals';
+import { jest, describe, it, expect, beforeAll, afterAll, beforeEach } from '@jest/globals';
 import type { FastifyInstance } from 'fastify';
 
 // --- Mocks de serviços (devem ser declarados ANTES dos dynamic imports) ---
