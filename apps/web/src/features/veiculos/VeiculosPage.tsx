@@ -4,12 +4,12 @@ import {
   Car, Plus, Pencil, Trash2, X, Check, Fuel, Gauge, DollarSign,
 } from 'lucide-react';
 import {
-  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 } from 'recharts';
 import { useAuth } from '@/hooks/useAuth';
 import { api } from '@/services/api';
 import { formatCurrency, formatDate } from '@/lib/format';
-import { format, parseISO } from 'date-fns';
+import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
 // ── Tipos ──────────────────────────────────────────────────────────────────
@@ -46,6 +46,61 @@ interface AbastecimentosResponse {
 
 function anoAtual() {
   return String(new Date().getFullYear());
+}
+
+interface MesStats {
+  key: string;          // YYYY-MM
+  label: string;        // "Março / 2025"
+  custo: number;
+  litros: number;
+  consumoMedio: number | null;
+  abastecimentos: Abastecimento[];
+}
+
+function groupByMonth(abastecimentos: Abastecimento[]): MesStats[] {
+  if (abastecimentos.length === 0) return [];
+
+  // Calcula consumo km/L por fill-up (pares consecutivos de km)
+  const sorted = [...abastecimentos].sort((a, b) => a.kmcarro - b.kmcarro);
+  const consumoPorId = new Map<number, number>();
+  for (let i = 1; i < sorted.length; i++) {
+    const deltaKm = sorted[i].kmcarro - sorted[i - 1].kmcarro;
+    if (deltaKm > 0 && sorted[i].quantidadelitros > 0) {
+      consumoPorId.set(sorted[i].idabastecimento, deltaKm / sorted[i].quantidadelitros);
+    }
+  }
+
+  // Agrupa por mês (ordem decrescente = lista desc por data)
+  const mapaOrdem: string[] = [];
+  const mapa = new Map<string, MesStats>();
+
+  // abastecimentos já vêm desc da API
+  for (const a of abastecimentos) {
+    const key = a.dataabastecimento.slice(0, 7); // YYYY-MM
+    if (!mapa.has(key)) {
+      const [ano, mes] = key.split('-');
+      const label = format(new Date(Number(ano), Number(mes) - 1, 1), "MMMM '/' yyyy", { locale: ptBR });
+      mapa.set(key, { key, label, custo: 0, litros: 0, consumoMedio: null, abastecimentos: [] });
+      mapaOrdem.push(key);
+    }
+    const entry = mapa.get(key)!;
+    entry.custo += a.totalabastecimento;
+    entry.litros += a.quantidadelitros;
+    entry.abastecimentos.push(a);
+  }
+
+  // Calcula consumo médio por mês
+  for (const stats of mapa.values()) {
+    let total = 0;
+    let count = 0;
+    for (const a of stats.abastecimentos) {
+      const c = consumoPorId.get(a.idabastecimento);
+      if (c != null) { total += c; count++; }
+    }
+    stats.consumoMedio = count > 0 ? total / count : null;
+  }
+
+  return mapaOrdem.map(k => mapa.get(k)!);
 }
 
 // ── Modal ──────────────────────────────────────────────────────────────────
@@ -271,12 +326,15 @@ function AbastecimentosPanel({ veiculo, isAdmin }: { veiculo: Veiculo; isAdmin: 
     }
   }
 
-  // Dados do gráfico — ordem cronológica
-  const chartData = [...(data?.abastecimentos ?? [])]
-    .sort((a, b) => a.dataabastecimento.localeCompare(b.dataabastecimento))
-    .map(a => ({
-      data: format(parseISO(a.dataabastecimento), 'dd/MM', { locale: ptBR }),
-      custo: a.totalabastecimento,
+  // Agrupa por mês (para lista e gráfico)
+  const meses = groupByMonth(data?.abastecimentos ?? []);
+
+  // Gráfico: custo agregado por mês em ordem cronológica
+  const chartData = [...meses]
+    .sort((a, b) => a.key.localeCompare(b.key))
+    .map(m => ({
+      mes: format(new Date(Number(m.key.slice(0, 4)), Number(m.key.slice(5, 7)) - 1, 1), 'MMM', { locale: ptBR }),
+      custo: m.custo,
     }));
 
   const anos = Array.from(
@@ -333,38 +391,31 @@ function AbastecimentosPanel({ veiculo, isAdmin }: { veiculo: Veiculo; isAdmin: 
         </div>
       )}
 
-      {/* Gráfico */}
+      {/* Gráfico — custo mensal */}
       {!isLoading && chartData.length > 0 && (
         <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-4">
-          <p className="text-xs font-semibold text-slate-600 dark:text-slate-400 mb-3">Custo por Abastecimento</p>
-          <ResponsiveContainer width="100%" height={180}>
-            <LineChart data={chartData} margin={{ left: -10 }}>
+          <p className="text-xs font-semibold text-slate-600 dark:text-slate-400 mb-3">Custo por Mês</p>
+          <ResponsiveContainer width="100%" height={160}>
+            <BarChart data={chartData} margin={{ left: -10, right: 4 }} barCategoryGap="25%">
               <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" vertical={false} />
-              <XAxis dataKey="data" tick={{ fontSize: 10, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
+              <XAxis dataKey="mes" tick={{ fontSize: 11, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
               <YAxis
                 tick={{ fontSize: 10, fill: '#94a3b8' }}
                 axisLine={false}
                 tickLine={false}
-                tickFormatter={v => `R$${v}`}
+                tickFormatter={v => v >= 1000 ? `R$${(v / 1000).toFixed(0)}k` : `R$${v}`}
               />
               <Tooltip
                 formatter={(value) => [formatCurrency(Number(value)), 'Custo']}
                 contentStyle={{ borderRadius: 8, border: '1px solid #e2e8f0', fontSize: 12 }}
               />
-              <Line
-                type="monotone"
-                dataKey="custo"
-                stroke="#3b82f6"
-                strokeWidth={2}
-                dot={{ r: 3, fill: '#3b82f6' }}
-                activeDot={{ r: 5 }}
-              />
-            </LineChart>
+              <Bar dataKey="custo" fill="#3b82f6" radius={[4, 4, 0, 0]} />
+            </BarChart>
           </ResponsiveContainer>
         </div>
       )}
 
-      {/* Lista */}
+      {/* Lista agrupada por mês */}
       <div className="rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
         {isLoading ? (
           Array.from({ length: 3 }).map((_, i) => (
@@ -380,56 +431,70 @@ function AbastecimentosPanel({ veiculo, isAdmin }: { veiculo: Veiculo; isAdmin: 
             Nenhum abastecimento em {ano}.
           </div>
         ) : (
-          <ul className="divide-y divide-slate-100 dark:divide-slate-700">
-            {data.abastecimentos.map(a => (
-              <li key={a.idabastecimento} className="flex items-center gap-3 px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors">
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-3 flex-wrap">
-                    <span className="text-sm font-semibold text-slate-900 dark:text-white whitespace-nowrap">
-                      {formatCurrency(a.totalabastecimento)}
-                    </span>
-                    <span className="text-xs text-slate-500 dark:text-slate-400 whitespace-nowrap">
-                      {a.quantidadelitros.toFixed(3)} L · {a.kmcarro.toLocaleString('pt-BR')} km
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-3 mt-0.5">
-                    <span className="text-xs text-slate-400 dark:text-slate-500">{formatDate(a.dataabastecimento)}</span>
-                    {a.observacao && (
-                      <span className="text-xs text-slate-400 dark:text-slate-500 truncate">{a.observacao.trim()}</span>
+          <ul>
+            {meses.map(mes => (
+              <li key={mes.key}>
+                {/* Registros do mês */}
+                {mes.abastecimentos.map(a => (
+                  <div key={a.idabastecimento} className="flex items-center gap-3 px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors border-b border-slate-100 dark:border-slate-700">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-3 flex-wrap">
+                        <span className="text-sm font-semibold text-slate-900 dark:text-white whitespace-nowrap">
+                          {formatCurrency(a.totalabastecimento)}
+                        </span>
+                        <span className="text-xs text-slate-500 dark:text-slate-400 whitespace-nowrap">
+                          {a.quantidadelitros.toFixed(3)} L · {a.kmcarro.toLocaleString('pt-BR')} km
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-3 mt-0.5">
+                        <span className="text-xs text-slate-400 dark:text-slate-500">{formatDate(a.dataabastecimento)}</span>
+                        {a.observacao && (
+                          <span className="text-xs text-slate-400 dark:text-slate-500 truncate">{a.observacao.trim()}</span>
+                        )}
+                      </div>
+                    </div>
+                    {isAdmin && (
+                      <div className="flex items-center gap-1 flex-shrink-0">
+                        {confirmDelete === a.idabastecimento ? (
+                          <>
+                            <button onClick={() => deleteMut.mutate(a.idabastecimento)} disabled={deleteMut.isPending} className="p-1 text-red-500 hover:text-red-700 transition-colors" aria-label="Confirmar exclusão">
+                              <Check className="w-4 h-4" />
+                            </button>
+                            <button onClick={() => setConfirmDelete(null)} className="p-1 text-slate-400 hover:text-slate-600 transition-colors" aria-label="Cancelar">
+                              <X className="w-4 h-4" />
+                            </button>
+                          </>
+                        ) : (
+                          <>
+                            <button
+                              onClick={() => { setEditando(a); setModalAbast('editar'); }}
+                              className="p-1 text-slate-300 hover:text-blue-500 dark:text-slate-600 dark:hover:text-blue-400 transition-colors"
+                              aria-label="Editar abastecimento"
+                            >
+                              <Pencil className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                              onClick={() => setConfirmDelete(a.idabastecimento)}
+                              className="p-1 text-slate-300 hover:text-red-500 dark:text-slate-600 dark:hover:text-red-400 transition-colors"
+                              aria-label="Excluir abastecimento"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </>
+                        )}
+                      </div>
                     )}
                   </div>
+                ))}
+                {/* Subtotal do mês */}
+                <div className="flex items-center gap-4 px-4 py-2 bg-slate-50 dark:bg-slate-700/40 border-b border-slate-200 dark:border-slate-700 flex-wrap">
+                  <span className="text-xs font-semibold text-slate-600 dark:text-slate-300 capitalize">{mes.label}</span>
+                  <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">{formatCurrency(mes.custo)}</span>
+                  <span className="text-xs text-slate-400 dark:text-slate-500">{mes.litros.toFixed(3)} L</span>
+                  {mes.consumoMedio != null && (
+                    <span className="text-xs text-slate-400 dark:text-slate-500">{mes.consumoMedio.toFixed(2)} km/L</span>
+                  )}
                 </div>
-                {isAdmin && (
-                  <div className="flex items-center gap-1 flex-shrink-0">
-                    {confirmDelete === a.idabastecimento ? (
-                      <>
-                        <button onClick={() => deleteMut.mutate(a.idabastecimento)} disabled={deleteMut.isPending} className="p-1 text-red-500 hover:text-red-700 transition-colors" aria-label="Confirmar exclusão">
-                          <Check className="w-4 h-4" />
-                        </button>
-                        <button onClick={() => setConfirmDelete(null)} className="p-1 text-slate-400 hover:text-slate-600 transition-colors" aria-label="Cancelar">
-                          <X className="w-4 h-4" />
-                        </button>
-                      </>
-                    ) : (
-                      <>
-                        <button
-                          onClick={() => { setEditando(a); setModalAbast('editar'); }}
-                          className="p-1 text-slate-300 hover:text-blue-500 dark:text-slate-600 dark:hover:text-blue-400 transition-colors"
-                          aria-label="Editar abastecimento"
-                        >
-                          <Pencil className="w-3.5 h-3.5" />
-                        </button>
-                        <button
-                          onClick={() => setConfirmDelete(a.idabastecimento)}
-                          className="p-1 text-slate-300 hover:text-red-500 dark:text-slate-600 dark:hover:text-red-400 transition-colors"
-                          aria-label="Excluir abastecimento"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      </>
-                    )}
-                  </div>
-                )}
               </li>
             ))}
           </ul>
