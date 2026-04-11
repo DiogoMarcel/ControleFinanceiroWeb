@@ -572,12 +572,12 @@ function AbastecimentosPanel({ veiculo, isAdmin }: { veiculo: Veiculo; isAdmin: 
 
 function StatCard({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
   return (
-    <div className="bg-slate-50 dark:bg-slate-700/50 rounded-xl px-4 py-3 flex flex-col gap-1">
-      <div className="flex items-center gap-1.5">
-        {icon}
-        <span className="text-xs text-slate-500 dark:text-slate-400">{label}</span>
+    <div className="bg-slate-50 dark:bg-slate-700/50 rounded-xl px-2 py-2 sm:px-4 sm:py-3 flex flex-col gap-1">
+      <div className="flex items-center gap-1">
+        <span className="hidden sm:block">{icon}</span>
+        <span className="text-xs text-slate-500 dark:text-slate-400 leading-tight">{label}</span>
       </div>
-      <span className="text-sm font-semibold text-slate-900 dark:text-white">{value}</span>
+      <span className="text-xs sm:text-sm font-semibold text-slate-900 dark:text-white tabular-nums">{value}</span>
     </div>
   );
 }

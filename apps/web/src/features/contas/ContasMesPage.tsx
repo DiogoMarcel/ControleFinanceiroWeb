@@ -46,8 +46,9 @@ function ContaIcones({ conta }: { conta: ContaItem }) {
 
 function ResumoBar({ total, marcado, aba }: { total: number; marcado: number; aba: Aba }) {
   const restante = total - marcado;
-  const label = aba === 'P' ? ['Total a Pagar', 'Marcado como Pago', 'Restante']
-                             : ['Total a Receber', 'Marcado como Recebido', 'Pendente'];
+  const label = aba === 'P'
+    ? [['Total a Pagar', 'Total'], ['Marcado como Pago', 'Pago'], ['Restante', 'Restante']]
+    : [['Total a Receber', 'Total'], ['Marcado como Recebido', 'Recebido'], ['Pendente', 'Pendente']];
   return (
     <div className="grid grid-cols-3 gap-3">
       {[
@@ -55,9 +56,12 @@ function ResumoBar({ total, marcado, aba }: { total: number; marcado: number; ab
         { l: label[1], v: marcado,  cls: 'text-emerald-600 dark:text-emerald-400' },
         { l: label[2], v: restante, cls: restante > 0 ? 'text-red-500 dark:text-red-400' : 'text-slate-900 dark:text-white' },
       ].map(({ l, v, cls }) => (
-        <div key={l} className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 px-2 py-2 sm:px-4 sm:py-3">
-          <p className="text-xs text-slate-500 dark:text-slate-400 leading-tight">{l}</p>
-          <p className={`text-sm sm:text-base font-bold tabular-nums mt-0.5 ${cls}`}>{formatCurrency(v)}</p>
+        <div key={l[0]} className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 px-2 py-2 sm:px-4 sm:py-3">
+          <p className="text-xs text-slate-500 dark:text-slate-400 leading-tight">
+            <span className="sm:hidden">{l[1]}</span>
+            <span className="hidden sm:inline">{l[0]}</span>
+          </p>
+          <p className={`text-xs sm:text-sm font-bold tabular-nums mt-0.5 ${cls}`}>{formatCurrency(v)}</p>
         </div>
       ))}
     </div>

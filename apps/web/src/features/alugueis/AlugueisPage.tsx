@@ -791,25 +791,25 @@ export function AlugueisPage() {
       {/* Stats */}
       {!isLoading && alugueis.length > 0 && (
         <div className="grid grid-cols-3 gap-3 mb-6">
-          <div className="rounded-xl border border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-900/20 px-4 py-3">
-            <div className="flex items-center gap-1.5 mb-1">
-              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
+          <div className="rounded-xl border border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-900/20 px-2 py-2 sm:px-4 sm:py-3">
+            <div className="flex items-center gap-1 mb-1">
+              <CheckCircle2 className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-emerald-500 flex-shrink-0" />
               <p className="text-xs text-emerald-600 dark:text-emerald-400">Recebido</p>
             </div>
-            <p className="text-sm font-semibold text-slate-900 dark:text-white">{formatCurrency(totalRecebido)}</p>
+            <p className="text-xs sm:text-sm font-semibold text-slate-900 dark:text-white tabular-nums">{formatCurrency(totalRecebido)}</p>
             <p className="text-xs text-slate-400 mt-0.5">{pagos.length} mês{pagos.length !== 1 ? 'es' : ''}</p>
           </div>
-          <div className="rounded-xl border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/20 px-4 py-3">
-            <div className="flex items-center gap-1.5 mb-1">
-              <Clock className="w-3.5 h-3.5 text-amber-500" />
+          <div className="rounded-xl border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/20 px-2 py-2 sm:px-4 sm:py-3">
+            <div className="flex items-center gap-1 mb-1">
+              <Clock className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-amber-500 flex-shrink-0" />
               <p className="text-xs text-amber-600 dark:text-amber-400">Pendente</p>
             </div>
-            <p className="text-sm font-semibold text-slate-900 dark:text-white">{formatCurrency(totalPendente)}</p>
+            <p className="text-xs sm:text-sm font-semibold text-slate-900 dark:text-white tabular-nums">{formatCurrency(totalPendente)}</p>
             <p className="text-xs text-slate-400 mt-0.5">{pendentes.length} mês{pendentes.length !== 1 ? 'es' : ''}</p>
           </div>
-          <div className="rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-700/40 px-4 py-3">
+          <div className="rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-700/40 px-2 py-2 sm:px-4 sm:py-3">
             <p className="text-xs text-slate-500 dark:text-slate-400 mb-1">Total {ano}</p>
-            <p className="text-sm font-semibold text-slate-900 dark:text-white">{formatCurrency(totalRecebido + totalPendente)}</p>
+            <p className="text-xs sm:text-sm font-semibold text-slate-900 dark:text-white tabular-nums">{formatCurrency(totalRecebido + totalPendente)}</p>
             <p className="text-xs text-slate-400 mt-0.5">{alugueis.length} lançamento{alugueis.length !== 1 ? 's' : ''}</p>
           </div>
         </div>
