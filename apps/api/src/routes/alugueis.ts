@@ -39,7 +39,7 @@ export async function alugueisRoutes(app: FastifyInstance): Promise<void> {
     return reply.send(ultimo ?? null);
   });
 
-  // POST /alugueis
+  // POST /alugueis — cria mês e aplica itens do template automaticamente
   app.post('/alugueis', async (req, reply) => {
     if (req.user.role !== 'admin') return reply.code(403).send({ error: 'Acesso negado' });
     const { dataaluguel, valoraluguel } = req.body as {
@@ -52,9 +52,27 @@ export async function alugueisRoutes(app: FastifyInstance): Promise<void> {
         valoraluguel: valoraluguel ?? null,
         datapagamento: null,
       },
-      include: { aluguelconta: true, aluguelcomp: true },
     });
-    return reply.code(201).send(aluguel);
+
+    // Aplicar itens do template automaticamente
+    const template = await prisma.alugueltemplate.findMany({ orderBy: { ordem: 'asc' } });
+    if (template.length > 0) {
+      await prisma.aluguelconta.createMany({
+        data: template.map(t => ({
+          id_aluguel: aluguel.idaluguel,
+          tipoconta: t.tipoconta,
+          valor: t.valor,
+          descricao: t.descricao,
+          compartilhado: t.compartilhado,
+        })),
+      });
+    }
+
+    const result = await prisma.aluguel.findUnique({
+      where: { idaluguel: aluguel.idaluguel },
+      include: { aluguelconta: { orderBy: { idaluguelconta: 'asc' } }, aluguelcomp: true },
+    });
+    return reply.code(201).send(result);
   });
 
   // PUT /alugueis/:id — atualiza dados gerais
@@ -177,4 +195,44 @@ export async function alugueisRoutes(app: FastifyInstance): Promise<void> {
       return reply.code(204).send();
     },
   );
+
+  // ── Template de itens padrão ─────────────────────────────────────────────
+
+  // GET /alugueis/template
+  app.get('/alugueis/template', async (_req, reply) => {
+    const items = await prisma.alugueltemplate.findMany({ orderBy: { ordem: 'asc' } });
+    return reply.send(items);
+  });
+
+  // POST /alugueis/template
+  app.post('/alugueis/template', async (req, reply) => {
+    if (req.user.role !== 'admin') return reply.code(403).send({ error: 'Acesso negado' });
+    const { tipoconta, valor, descricao, compartilhado, ordem } = req.body as {
+      tipoconta: string; valor: number; descricao: string; compartilhado: string; ordem?: number;
+    };
+    const item = await prisma.alugueltemplate.create({
+      data: { tipoconta, valor, descricao, compartilhado, ordem: ordem ?? 0 },
+    });
+    return reply.code(201).send(item);
+  });
+
+  // PUT /alugueis/template/:id
+  app.put<{ Params: { id: string } }>('/alugueis/template/:id', async (req, reply) => {
+    if (req.user.role !== 'admin') return reply.code(403).send({ error: 'Acesso negado' });
+    const { tipoconta, valor, descricao, compartilhado, ordem } = req.body as {
+      tipoconta?: string; valor?: number; descricao?: string; compartilhado?: string; ordem?: number;
+    };
+    const item = await prisma.alugueltemplate.update({
+      where: { idtemplate: Number(req.params.id) },
+      data: { tipoconta, valor, descricao, compartilhado, ordem },
+    });
+    return reply.send(item);
+  });
+
+  // DELETE /alugueis/template/:id
+  app.delete<{ Params: { id: string } }>('/alugueis/template/:id', async (req, reply) => {
+    if (req.user.role !== 'admin') return reply.code(403).send({ error: 'Acesso negado' });
+    await prisma.alugueltemplate.delete({ where: { idtemplate: Number(req.params.id) } });
+    return reply.code(204).send();
+  });
 }

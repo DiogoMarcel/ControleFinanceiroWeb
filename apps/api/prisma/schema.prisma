@@ -289,6 +289,15 @@ model unidademedida {
   produto         produto[]
 }
 
+model alugueltemplate {
+  idtemplate    Int    @id @default(autoincrement())
+  tipoconta     String @db.Char(1)
+  valor         Float
+  descricao     String @db.VarChar(50)
+  compartilhado String @db.Char(1)
+  ordem         Int    @default(0)
+}
+
 model veiculos {
   idveiculo      Int              @id @default(autoincrement())
   modelo         String           @db.Char(50)

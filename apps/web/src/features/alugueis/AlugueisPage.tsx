@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
-  Building2, Plus, Pencil, Trash2, X, Check, CheckCircle2, Clock,
+  Building2, Plus, Pencil, Trash2, X, Check, CheckCircle2, Clock, ChevronDown, ChevronUp, Settings2,
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { api } from '@/services/api';
@@ -33,6 +33,15 @@ interface Aluguel {
   valoraluguel: number | null;
   aluguelconta: AluguelConta[];
   aluguelcomp: AluguelComp[];
+}
+
+interface TemplateItem {
+  idtemplate: number;
+  tipoconta: string;
+  valor: number;
+  descricao: string;
+  compartilhado: string;
+  ordem: number;
 }
 
 // ── Helpers ────────────────────────────────────────────────────────────────
@@ -528,6 +537,143 @@ function DetalhesPanel({ aluguel, isAdmin, ano }: { aluguel: Aluguel; isAdmin: b
   );
 }
 
+// ── Painel de Template ─────────────────────────────────────────────────────
+
+function TemplatePainel({ isAdmin }: { isAdmin: boolean }) {
+  const qc = useQueryClient();
+  const [aberto, setAberto] = useState(false);
+  const [modalItem, setModalItem] = useState<'novo' | 'editar' | null>(null);
+  const [editandoItem, setEditandoItem] = useState<TemplateItem | null>(null);
+
+  const { data: template = [] } = useQuery<TemplateItem[]>({
+    queryKey: ['alugueis', 'template'],
+    queryFn: async () => (await api.get('/alugueis/template')).data,
+  });
+
+  const createMut = useMutation({
+    mutationFn: (body: object) => api.post('/alugueis/template', body),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['alugueis', 'template'] }); setModalItem(null); },
+  });
+
+  const updateMut = useMutation({
+    mutationFn: ({ id, ...body }: { id: number } & object) => api.put(`/alugueis/template/${id}`, body),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['alugueis', 'template'] }); setModalItem(null); setEditandoItem(null); },
+  });
+
+  const deleteMut = useMutation({
+    mutationFn: (id: number) => api.delete(`/alugueis/template/${id}`),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['alugueis', 'template'] }),
+  });
+
+  function handleSubmit(vals: { tipoconta: string; valor: string; descricao: string; compartilhado: string }) {
+    const body = { tipoconta: vals.tipoconta, valor: Number(vals.valor), descricao: vals.descricao, compartilhado: vals.compartilhado };
+    if (modalItem === 'editar' && editandoItem) {
+      updateMut.mutate({ id: editandoItem.idtemplate, ...body });
+    } else {
+      createMut.mutate(body);
+    }
+  }
+
+  const badgeMap: Record<string, { label: string; cls: string }> = {
+    V: { label: 'Ambos', cls: 'bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400' },
+    S: { label: 'Comp', cls: 'bg-purple-100 dark:bg-purple-900/40 text-purple-600 dark:text-purple-400' },
+    F: { label: 'Meu', cls: 'bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400' },
+  };
+
+  return (
+    <div className="mb-6 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 overflow-hidden">
+      {/* Header colapsável */}
+      <button
+        onClick={() => setAberto(v => !v)}
+        className="w-full flex items-center justify-between px-4 py-3 text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/40 transition-colors"
+      >
+        <div className="flex items-center gap-2">
+          <Settings2 className="w-4 h-4 text-slate-400" />
+          <span>Itens Padrão do Template</span>
+          {template.length > 0 && (
+            <span className="text-xs text-slate-400 font-normal">
+              — {template.length} item{template.length !== 1 ? 's' : ''} aplicado{template.length !== 1 ? 's' : ''} a cada novo mês
+            </span>
+          )}
+        </div>
+        {aberto ? <ChevronUp className="w-4 h-4 text-slate-400" /> : <ChevronDown className="w-4 h-4 text-slate-400" />}
+      </button>
+
+      {aberto && (
+        <div className="border-t border-slate-200 dark:border-slate-700 px-4 py-3">
+          {template.length === 0 ? (
+            <p className="text-xs text-slate-400 dark:text-slate-500 text-center py-3">
+              Nenhum item configurado. Adicione itens que serão criados automaticamente a cada novo mês.
+            </p>
+          ) : (
+            <div className="space-y-1 mb-3">
+              {template.map(item => {
+                const badge = badgeMap[item.compartilhado] ?? badgeMap['F'];
+                const isPositive = item.tipoconta === 'R';
+                const [confirm, setConfirm] = useState(false);
+                return (
+                  <div key={item.idtemplate} className="flex items-center gap-2 px-3 py-2 hover:bg-slate-50 dark:hover:bg-slate-700/30 rounded-lg">
+                    <span className={`text-xs font-medium px-1.5 py-0.5 rounded flex-shrink-0 ${badge.cls}`}>{badge.label}</span>
+                    <span className="text-sm text-slate-700 dark:text-slate-300 flex-1 truncate">{item.descricao}</span>
+                    <span className={`text-sm font-semibold whitespace-nowrap ${isPositive ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-500 dark:text-red-400'}`}>
+                      {isPositive ? '+' : '−'}{formatCurrency(item.valor)}
+                    </span>
+                    {isAdmin && (
+                      <div className="flex items-center gap-0.5 flex-shrink-0">
+                        {confirm ? (
+                          <>
+                            <button onClick={() => { deleteMut.mutate(item.idtemplate); setConfirm(false); }} className="p-1 text-red-500 hover:text-red-700" aria-label="Confirmar">
+                              <Check className="w-3.5 h-3.5" />
+                            </button>
+                            <button onClick={() => setConfirm(false)} className="p-1 text-slate-400 hover:text-slate-600" aria-label="Cancelar">
+                              <X className="w-3.5 h-3.5" />
+                            </button>
+                          </>
+                        ) : (
+                          <>
+                            <button onClick={() => { setEditandoItem(item); setModalItem('editar'); }} className="p-1 text-slate-300 hover:text-blue-500 dark:text-slate-600 dark:hover:text-blue-400 transition-colors" aria-label="Editar">
+                              <Pencil className="w-3.5 h-3.5" />
+                            </button>
+                            <button onClick={() => setConfirm(true)} className="p-1 text-slate-300 hover:text-red-500 dark:text-slate-600 dark:hover:text-red-400 transition-colors" aria-label="Excluir">
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+          {isAdmin && (
+            <button
+              onClick={() => { setEditandoItem(null); setModalItem('novo'); }}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium border border-dashed border-slate-300 dark:border-slate-600 text-slate-500 dark:text-slate-400 rounded-lg hover:border-blue-400 hover:text-blue-500 transition-colors"
+            >
+              <Plus className="w-3.5 h-3.5" /> Adicionar item padrão
+            </button>
+          )}
+        </div>
+      )}
+
+      {(modalItem === 'novo' || (modalItem === 'editar' && editandoItem)) && (
+        <Modal
+          title={modalItem === 'novo' ? 'Novo Item Padrão' : 'Editar Item Padrão'}
+          onClose={() => { setModalItem(null); setEditandoItem(null); }}
+        >
+          <ContaForm
+            initial={editandoItem ?? undefined}
+            onSubmit={handleSubmit}
+            onCancel={() => { setModalItem(null); setEditandoItem(null); }}
+            loading={createMut.isPending || updateMut.isPending}
+          />
+        </Modal>
+      )}
+    </div>
+  );
+}
+
 // ── Página Principal ───────────────────────────────────────────────────────
 
 export function AlugueisPage() {
@@ -616,6 +762,9 @@ export function AlugueisPage() {
           )}
         </div>
       </div>
+
+      {/* Template de itens padrão */}
+      <TemplatePainel isAdmin={isAdmin} />
 
       {/* Stats */}
       {!isLoading && alugueis.length > 0 && (
