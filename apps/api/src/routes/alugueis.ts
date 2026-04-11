@@ -30,26 +30,34 @@ export async function alugueisRoutes(app: FastifyInstance): Promise<void> {
     return reply.send(alugueis);
   });
 
+  // GET /alugueis/ultimo — valor do último lançamento (qualquer ano)
+  app.get('/alugueis/ultimo', async (_req, reply) => {
+    const ultimo = await prisma.aluguel.findFirst({
+      orderBy: { dataaluguel: 'desc' },
+      select: { valoraluguel: true, dataaluguel: true },
+    });
+    return reply.send(ultimo ?? null);
+  });
+
   // POST /alugueis
   app.post('/alugueis', async (req, reply) => {
     if (req.user.role !== 'admin') return reply.code(403).send({ error: 'Acesso negado' });
-    const { dataaluguel, valoraluguel, datapagamento } = req.body as {
+    const { dataaluguel, valoraluguel } = req.body as {
       dataaluguel: string;
       valoraluguel?: number;
-      datapagamento?: string;
     };
     const aluguel = await prisma.aluguel.create({
       data: {
         dataaluguel: new Date(dataaluguel),
         valoraluguel: valoraluguel ?? null,
-        datapagamento: datapagamento ? new Date(datapagamento) : null,
+        datapagamento: null,
       },
       include: { aluguelconta: true, aluguelcomp: true },
     });
     return reply.code(201).send(aluguel);
   });
 
-  // PUT /alugueis/:id
+  // PUT /alugueis/:id — atualiza dados gerais
   app.put<{ Params: { id: string } }>('/alugueis/:id', async (req, reply) => {
     if (req.user.role !== 'admin') return reply.code(403).send({ error: 'Acesso negado' });
     const { dataaluguel, valoraluguel, datapagamento } = req.body as {
@@ -69,10 +77,43 @@ export async function alugueisRoutes(app: FastifyInstance): Promise<void> {
     return reply.send(aluguel);
   });
 
+  // PATCH /alugueis/:id/comp — marcar/desmarcar pagamento compartilhado
+  app.patch<{ Params: { id: string } }>('/alugueis/:id/comp', async (req, reply) => {
+    if (req.user.role !== 'admin') return reply.code(403).send({ error: 'Acesso negado' });
+    const id = Number(req.params.id);
+    const { datapagamento } = req.body as { datapagamento: string | null };
+
+    if (!datapagamento) {
+      // desmarcar: remove todos os aluguelcomp deste aluguel
+      await prisma.aluguelcomp.deleteMany({ where: { id_aluguel: id } });
+    } else {
+      const existe = await prisma.aluguelcomp.findFirst({ where: { id_aluguel: id } });
+      if (existe) {
+        await prisma.aluguelcomp.update({
+          where: { idaluguelcomp: existe.idaluguelcomp },
+          data: { datapagamento: new Date(datapagamento) },
+        });
+      } else {
+        await prisma.aluguelcomp.create({
+          data: { id_aluguel: id, datapagamento: new Date(datapagamento) },
+        });
+      }
+    }
+
+    const aluguel = await prisma.aluguel.findUnique({
+      where: { idaluguel: id },
+      include: { aluguelconta: true, aluguelcomp: true },
+    });
+    return reply.send(aluguel);
+  });
+
   // DELETE /alugueis/:id
   app.delete<{ Params: { id: string } }>('/alugueis/:id', async (req, reply) => {
     if (req.user.role !== 'admin') return reply.code(403).send({ error: 'Acesso negado' });
-    await prisma.aluguel.delete({ where: { idaluguel: Number(req.params.id) } });
+    const id = Number(req.params.id);
+    // aluguelcomp tem onDelete: NoAction — remover manualmente
+    await prisma.aluguelcomp.deleteMany({ where: { id_aluguel: id } });
+    await prisma.aluguel.delete({ where: { idaluguel: id } });
     return reply.code(204).send();
   });
 

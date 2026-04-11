@@ -26,7 +26,7 @@ await app.register(cors, {
   origin: (origin, cb) => {
     if (!origin || allowedOrigins.includes(origin)) return cb(null, true);
     // Em desenvolvimento, aceita qualquer origem da rede local
-    if (process.env['NODE_ENV'] !== 'production' && /^http:\/\/192\.168\./.test(origin)) {
+    if (process.env['NODE_ENV'] !== 'production' && /^http:\/\/(192\.168\.|10\.)/.test(origin)) {
       return cb(null, true);
     }
     cb(new Error('Not allowed by CORS'), false);
