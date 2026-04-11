@@ -6,8 +6,10 @@ import { AppRouter } from './router';
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 1000 * 60 * 5,
+      staleTime: 1000 * 60 * 5,   // 5 min — dados financeiros mudam pouco
+      gcTime: 1000 * 60 * 10,     // 10 min — mantém cache mesmo fora de uso
       retry: 1,
+      refetchOnWindowFocus: false, // não refetch ao trocar de aba (dados financeiros)
     },
   },
 });

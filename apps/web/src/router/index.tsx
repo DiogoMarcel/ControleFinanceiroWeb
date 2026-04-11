@@ -1,18 +1,21 @@
+import { lazy, Suspense } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { LoginPage } from '@/features/auth/LoginPage';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { ProtectedRoute } from '@/components/layout/ProtectedRoute';
-import { DashboardPage } from '@/features/dashboard/DashboardPage';
-import { PortadoresPage } from '@/features/portadores/PortadoresPage';
-import { ContasMesPage } from '@/features/contas/ContasMesPage';
-import { ConfiguracoesPage } from '@/features/configuracoes/ConfiguracoesPage';
-import { ExtratoPage } from '@/features/extrato/ExtratoPage';
-import { CartoesPage } from '@/features/cartoes/CartoesPage';
-import { RelatoriosPage } from '@/features/relatorios/RelatoriosPage';
-import { VeiculosPage } from '@/features/veiculos/VeiculosPage';
-import { FgtsPage } from '@/features/fgts/FgtsPage';
-import { AlugueisPage } from '@/features/alugueis/AlugueisPage';
+import { PageSkeleton } from '@/components/ui';
 
+// Lazy loading — cada página é um chunk separado, carregado só quando acessado
+const DashboardPage    = lazy(() => import('@/features/dashboard/DashboardPage').then(m => ({ default: m.DashboardPage })));
+const PortadoresPage   = lazy(() => import('@/features/portadores/PortadoresPage').then(m => ({ default: m.PortadoresPage })));
+const ContasMesPage    = lazy(() => import('@/features/contas/ContasMesPage').then(m => ({ default: m.ContasMesPage })));
+const ConfiguracoesPage = lazy(() => import('@/features/configuracoes/ConfiguracoesPage').then(m => ({ default: m.ConfiguracoesPage })));
+const ExtratoPage      = lazy(() => import('@/features/extrato/ExtratoPage').then(m => ({ default: m.ExtratoPage })));
+const CartoesPage      = lazy(() => import('@/features/cartoes/CartoesPage').then(m => ({ default: m.CartoesPage })));
+const RelatoriosPage   = lazy(() => import('@/features/relatorios/RelatoriosPage').then(m => ({ default: m.RelatoriosPage })));
+const VeiculosPage     = lazy(() => import('@/features/veiculos/VeiculosPage').then(m => ({ default: m.VeiculosPage })));
+const FgtsPage         = lazy(() => import('@/features/fgts/FgtsPage').then(m => ({ default: m.FgtsPage })));
+const AlugueisPage     = lazy(() => import('@/features/alugueis/AlugueisPage').then(m => ({ default: m.AlugueisPage })));
 
 export function AppRouter() {
   return (
@@ -21,17 +24,87 @@ export function AppRouter() {
 
       <Route element={<ProtectedRoute />}>
         <Route element={<AppLayout />}>
-        <Route index element={<Navigate to="/dashboard" replace />} />
-        <Route path="/dashboard" element={<DashboardPage />} />
-        <Route path="/contas" element={<ContasMesPage />} />
-        <Route path="/portadores" element={<PortadoresPage />} />
-        <Route path="/extrato" element={<ExtratoPage />} />
-        <Route path="/cartoes" element={<CartoesPage />} />
-        <Route path="/relatorios" element={<RelatoriosPage />} />
-        <Route path="/veiculos" element={<VeiculosPage />} />
-        <Route path="/alugueis" element={<AlugueisPage />} />
-        <Route path="/fgts" element={<FgtsPage />} />
-        <Route path="/configuracoes" element={<ConfiguracoesPage />} />
+          <Route index element={<Navigate to="/dashboard" replace />} />
+          <Route
+            path="/dashboard"
+            element={
+              <Suspense fallback={<PageSkeleton />}>
+                <DashboardPage />
+              </Suspense>
+            }
+          />
+          <Route
+            path="/contas"
+            element={
+              <Suspense fallback={<PageSkeleton />}>
+                <ContasMesPage />
+              </Suspense>
+            }
+          />
+          <Route
+            path="/portadores"
+            element={
+              <Suspense fallback={<PageSkeleton />}>
+                <PortadoresPage />
+              </Suspense>
+            }
+          />
+          <Route
+            path="/extrato"
+            element={
+              <Suspense fallback={<PageSkeleton />}>
+                <ExtratoPage />
+              </Suspense>
+            }
+          />
+          <Route
+            path="/cartoes"
+            element={
+              <Suspense fallback={<PageSkeleton />}>
+                <CartoesPage />
+              </Suspense>
+            }
+          />
+          <Route
+            path="/relatorios"
+            element={
+              <Suspense fallback={<PageSkeleton />}>
+                <RelatoriosPage />
+              </Suspense>
+            }
+          />
+          <Route
+            path="/veiculos"
+            element={
+              <Suspense fallback={<PageSkeleton />}>
+                <VeiculosPage />
+              </Suspense>
+            }
+          />
+          <Route
+            path="/alugueis"
+            element={
+              <Suspense fallback={<PageSkeleton />}>
+                <AlugueisPage />
+              </Suspense>
+            }
+          />
+          <Route
+            path="/fgts"
+            element={
+              <Suspense fallback={<PageSkeleton />}>
+                <FgtsPage />
+              </Suspense>
+            }
+          />
+          <Route
+            path="/configuracoes"
+            element={
+              <Suspense fallback={<PageSkeleton />}>
+                <ConfiguracoesPage />
+              </Suspense>
+            }
+          />
         </Route>
       </Route>
 
