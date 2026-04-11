@@ -537,6 +537,61 @@ function DetalhesPanel({ aluguel, isAdmin, ano }: { aluguel: Aluguel; isAdmin: b
   );
 }
 
+// ── Linha de item do template ─────────────────────────────────────────────
+
+function TemplateItemRow({
+  item, isAdmin, onEdit, onDelete, deleting,
+}: {
+  item: TemplateItem;
+  isAdmin: boolean;
+  onEdit: () => void;
+  onDelete: () => void;
+  deleting: boolean;
+}) {
+  const [confirm, setConfirm] = useState(false);
+
+  const badgeMap: Record<string, { label: string; cls: string }> = {
+    V: { label: 'Ambos', cls: 'bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400' },
+    S: { label: 'Comp', cls: 'bg-purple-100 dark:bg-purple-900/40 text-purple-600 dark:text-purple-400' },
+    F: { label: 'Meu', cls: 'bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400' },
+  };
+  const badge = badgeMap[item.compartilhado] ?? badgeMap['F'];
+  const isPositive = item.tipoconta === 'R';
+
+  return (
+    <div className="flex items-center gap-2 px-3 py-2 hover:bg-slate-50 dark:hover:bg-slate-700/30 rounded-lg">
+      <span className={`text-xs font-medium px-1.5 py-0.5 rounded flex-shrink-0 ${badge.cls}`}>{badge.label}</span>
+      <span className="text-sm text-slate-700 dark:text-slate-300 flex-1 truncate">{item.descricao}</span>
+      <span className={`text-sm font-semibold whitespace-nowrap ${isPositive ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-500 dark:text-red-400'}`}>
+        {isPositive ? '+' : '−'}{formatCurrency(item.valor)}
+      </span>
+      {isAdmin && (
+        <div className="flex items-center gap-0.5 flex-shrink-0">
+          {confirm ? (
+            <>
+              <button onClick={() => { onDelete(); setConfirm(false); }} disabled={deleting} className="p-1 text-red-500 hover:text-red-700" aria-label="Confirmar">
+                <Check className="w-3.5 h-3.5" />
+              </button>
+              <button onClick={() => setConfirm(false)} className="p-1 text-slate-400 hover:text-slate-600" aria-label="Cancelar">
+                <X className="w-3.5 h-3.5" />
+              </button>
+            </>
+          ) : (
+            <>
+              <button onClick={onEdit} className="p-1 text-slate-300 hover:text-blue-500 dark:text-slate-600 dark:hover:text-blue-400 transition-colors" aria-label="Editar">
+                <Pencil className="w-3.5 h-3.5" />
+              </button>
+              <button onClick={() => setConfirm(true)} className="p-1 text-slate-300 hover:text-red-500 dark:text-slate-600 dark:hover:text-red-400 transition-colors" aria-label="Excluir">
+                <Trash2 className="w-3.5 h-3.5" />
+              </button>
+            </>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── Painel de Template ─────────────────────────────────────────────────────
 
 function TemplatePainel({ isAdmin }: { isAdmin: boolean }) {
@@ -574,12 +629,6 @@ function TemplatePainel({ isAdmin }: { isAdmin: boolean }) {
     }
   }
 
-  const badgeMap: Record<string, { label: string; cls: string }> = {
-    V: { label: 'Ambos', cls: 'bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400' },
-    S: { label: 'Comp', cls: 'bg-purple-100 dark:bg-purple-900/40 text-purple-600 dark:text-purple-400' },
-    F: { label: 'Meu', cls: 'bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400' },
-  };
-
   return (
     <div className="mb-6 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 overflow-hidden">
       {/* Header colapsável */}
@@ -607,43 +656,16 @@ function TemplatePainel({ isAdmin }: { isAdmin: boolean }) {
             </p>
           ) : (
             <div className="space-y-1 mb-3">
-              {template.map(item => {
-                const badge = badgeMap[item.compartilhado] ?? badgeMap['F'];
-                const isPositive = item.tipoconta === 'R';
-                const [confirm, setConfirm] = useState(false);
-                return (
-                  <div key={item.idtemplate} className="flex items-center gap-2 px-3 py-2 hover:bg-slate-50 dark:hover:bg-slate-700/30 rounded-lg">
-                    <span className={`text-xs font-medium px-1.5 py-0.5 rounded flex-shrink-0 ${badge.cls}`}>{badge.label}</span>
-                    <span className="text-sm text-slate-700 dark:text-slate-300 flex-1 truncate">{item.descricao}</span>
-                    <span className={`text-sm font-semibold whitespace-nowrap ${isPositive ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-500 dark:text-red-400'}`}>
-                      {isPositive ? '+' : '−'}{formatCurrency(item.valor)}
-                    </span>
-                    {isAdmin && (
-                      <div className="flex items-center gap-0.5 flex-shrink-0">
-                        {confirm ? (
-                          <>
-                            <button onClick={() => { deleteMut.mutate(item.idtemplate); setConfirm(false); }} className="p-1 text-red-500 hover:text-red-700" aria-label="Confirmar">
-                              <Check className="w-3.5 h-3.5" />
-                            </button>
-                            <button onClick={() => setConfirm(false)} className="p-1 text-slate-400 hover:text-slate-600" aria-label="Cancelar">
-                              <X className="w-3.5 h-3.5" />
-                            </button>
-                          </>
-                        ) : (
-                          <>
-                            <button onClick={() => { setEditandoItem(item); setModalItem('editar'); }} className="p-1 text-slate-300 hover:text-blue-500 dark:text-slate-600 dark:hover:text-blue-400 transition-colors" aria-label="Editar">
-                              <Pencil className="w-3.5 h-3.5" />
-                            </button>
-                            <button onClick={() => setConfirm(true)} className="p-1 text-slate-300 hover:text-red-500 dark:text-slate-600 dark:hover:text-red-400 transition-colors" aria-label="Excluir">
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
-                          </>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
+              {template.map(item => (
+                <TemplateItemRow
+                  key={item.idtemplate}
+                  item={item}
+                  isAdmin={isAdmin}
+                  onEdit={() => { setEditandoItem(item); setModalItem('editar'); }}
+                  onDelete={() => deleteMut.mutate(item.idtemplate)}
+                  deleting={deleteMut.isPending}
+                />
+              ))}
             </div>
           )}
           {isAdmin && (
