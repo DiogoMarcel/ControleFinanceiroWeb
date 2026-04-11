@@ -285,6 +285,13 @@ function AbastecimentosPanel({ veiculo, isAdmin }: { veiculo: Veiculo; isAdmin: 
       (await api.get(`/veiculos/${veiculo.idveiculo}/abastecimentos`, { params: { inicio, fim } })).data,
   });
 
+  // Totais gerais — todos os anos
+  const { data: geral } = useQuery<AbastecimentosResponse>({
+    queryKey: ['abastecimentos', veiculo.idveiculo, 'all'],
+    queryFn: async () =>
+      (await api.get(`/veiculos/${veiculo.idveiculo}/abastecimentos`)).data,
+  });
+
   const createMut = useMutation({
     mutationFn: (body: object) => api.post(`/veiculos/${veiculo.idveiculo}/abastecimentos`, body),
     onSuccess: () => {
@@ -372,7 +379,43 @@ function AbastecimentosPanel({ veiculo, isAdmin }: { veiculo: Veiculo; isAdmin: 
         </div>
       </div>
 
-      {/* Stats */}
+      {/* Painel geral — todos os anos */}
+      {geral && geral.abastecimentos.length > 0 && (() => {
+        const primeiro = [...geral.abastecimentos].sort((a, b) =>
+          a.dataabastecimento.localeCompare(b.dataabastecimento)
+        )[0];
+        const kmTotal = Math.max(...geral.abastecimentos.map(a => a.kmcarro)) -
+          Math.min(...geral.abastecimentos.map(a => a.kmcarro));
+        return (
+          <div className="rounded-xl border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-900/20 px-4 py-3">
+            <p className="text-xs font-semibold text-blue-700 dark:text-blue-400 mb-2">
+              Totais Gerais · desde {formatDate(primeiro.dataabastecimento)}
+            </p>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <div>
+                <p className="text-xs text-blue-500 dark:text-blue-400">Total investido</p>
+                <p className="text-sm font-semibold text-slate-900 dark:text-white">{formatCurrency(geral.custoTotal)}</p>
+              </div>
+              <div>
+                <p className="text-xs text-blue-500 dark:text-blue-400">Total litros</p>
+                <p className="text-sm font-semibold text-slate-900 dark:text-white">{geral.totalLitros.toFixed(2)} L</p>
+              </div>
+              <div>
+                <p className="text-xs text-blue-500 dark:text-blue-400">Consumo médio</p>
+                <p className="text-sm font-semibold text-slate-900 dark:text-white">
+                  {geral.consumoMedio != null ? `${geral.consumoMedio.toFixed(2)} km/L` : '—'}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs text-blue-500 dark:text-blue-400">KM rodados</p>
+                <p className="text-sm font-semibold text-slate-900 dark:text-white">{kmTotal.toLocaleString('pt-BR')} km</p>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* Stats do ano selecionado */}
       {isLoading ? (
         <div className="grid grid-cols-3 gap-3">
           {Array.from({ length: 3 }).map((_, i) => (
@@ -381,7 +424,7 @@ function AbastecimentosPanel({ veiculo, isAdmin }: { veiculo: Veiculo; isAdmin: 
         </div>
       ) : (
         <div className="grid grid-cols-3 gap-3">
-          <StatCard icon={<DollarSign className="w-4 h-4 text-blue-500" />} label="Custo Total" value={formatCurrency(data?.custoTotal ?? 0)} />
+          <StatCard icon={<DollarSign className="w-4 h-4 text-blue-500" />} label={`Custo ${ano}`} value={formatCurrency(data?.custoTotal ?? 0)} />
           <StatCard icon={<Fuel className="w-4 h-4 text-green-500" />} label="Litros" value={`${(data?.totalLitros ?? 0).toFixed(2)} L`} />
           <StatCard
             icon={<Gauge className="w-4 h-4 text-amber-500" />}
