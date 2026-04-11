@@ -1,0 +1,13 @@
+node_modules
+**/node_modules
+**/dist
+**/.turbo
+apps/web
+.github
+.claude
+*.md
+*.log
+.env
+**/.env
+**/.env.*
+!**/.env.example
