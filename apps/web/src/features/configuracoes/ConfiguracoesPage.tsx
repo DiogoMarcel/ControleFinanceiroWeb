@@ -99,10 +99,10 @@ function CrudSection({ title, items, isLoading, isAdmin, onCreate, onUpdate, onD
           <button
             onClick={handleCreate}
             disabled={salvando || !novoValor.trim()}
-            className="flex items-center gap-1.5 px-3 py-2 text-sm rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-medium transition-colors disabled:opacity-50"
+            className="flex items-center gap-1.5 px-3 py-2 text-sm rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-medium transition-colors disabled:opacity-50 flex-shrink-0"
           >
             <Plus className="w-4 h-4" />
-            Adicionar
+            <span className="hidden sm:inline">Adicionar</span>
           </button>
         </div>
       )}
