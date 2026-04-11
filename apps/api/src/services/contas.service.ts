@@ -130,7 +130,10 @@ export async function deleteConta(id: number) {
 // Relatório de impressão — contas a pagar ordenadas por dia de vencimento
 export function relatorioContasPagar() {
   return prisma.conta.findMany({
-    where: { tipoconta: 'P' },
+    where: {
+      tipoconta: 'P',
+      OR: [{ debitoauto: true }, { pagamentomanual: true }],
+    },
     include: {
       membrofamilia: { select: { idmembrofamilia: true, nome: true } },
       credor: { select: { idcredor: true, nome: true } },
