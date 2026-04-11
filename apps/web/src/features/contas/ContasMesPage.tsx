@@ -1,6 +1,7 @@
 import { useState, useMemo, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, RotateCcw, CreditCard, Repeat, FileText, Calendar, Building2, Pencil, Trash2 } from 'lucide-react';
+import { Plus, RotateCcw, CreditCard, Repeat, FileText, Calendar, Building2, Pencil, Trash2, Printer } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { formatCurrency } from '@/lib/format';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
@@ -23,6 +24,7 @@ interface ContaItem {
   id_membrofamilia: number | null;
   id_credor: number | null;
   qtdparcela: number | null;
+  diavencimento: number | null;
   membrofamilia: { idmembrofamilia: number; nome: string } | null;
   credor: { idcredor: number; nome: string } | null;
   contatag?: { tags: { idtags: number } | null }[];
@@ -89,6 +91,7 @@ export function ContasMesPage() {
   const { user } = useAuth();
   const isAdmin = user?.role === 'admin';
   const qc = useQueryClient();
+  const navigate = useNavigate();
 
   const [aba, setAba] = useState<Aba>('P');
   const [modalNova, setModalNova]             = useState(false);
@@ -195,6 +198,13 @@ export function ContasMesPage() {
           </p>
         </div>
         <div className="flex gap-2">
+          <button
+            onClick={() => navigate('/contas/imprimir')}
+            className="flex items-center gap-1.5 px-3 py-2 text-sm rounded-lg border border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
+          >
+            <Printer className="w-4 h-4" />
+            <span className="hidden sm:inline">Imprimir</span>
+          </button>
           {qtdMarcadas > 0 && (
             <button
               onClick={() => reiniciarMutation.mutate(aba)}
@@ -296,6 +306,11 @@ export function ContasMesPage() {
                         onChange={(e) => toggleMarca(c, e)}
                         className="w-4 h-4 rounded border-slate-300 text-emerald-500 focus:ring-emerald-500 flex-shrink-0"
                       />
+                      {c.diavencimento != null && (
+                        <span className="text-xs font-mono text-slate-400 dark:text-slate-500 flex-shrink-0 w-6 text-right">
+                          {c.diavencimento}
+                        </span>
+                      )}
                       <span className={cn(
                         'flex-1 text-sm text-slate-700 dark:text-slate-300 truncate',
                         c.marcado && 'line-through',

@@ -10,6 +10,7 @@ import {
   removeTagConta,
   toggleMarcado,
   reiniciarMarcadas,
+  relatorioContasPagar,
 } from '../services/contas.service.js';
 
 type IdParam = { Params: { id: string } };
@@ -84,6 +85,12 @@ export async function contasRoutes(app: FastifyInstance): Promise<void> {
       const result = await toggleMarcado(Number(req.params.id), req.body.marcado);
       return reply.send(result);
     } catch (err) { handleError(err, reply); }
+  });
+
+  // GET /contas/relatorio — relatório para impressão (a pagar, por dia de vencimento)
+  app.get('/contas/relatorio', async (_req, reply) => {
+    const contas = await relatorioContasPagar();
+    return reply.send(contas);
   });
 
   // POST /contas/reiniciar — qualquer usuário autenticado

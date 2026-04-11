@@ -12,6 +12,7 @@ export interface ContaInput {
   debitoauto?: boolean;
   pagamentomanual?: boolean;
   qtdparcela?: number | null;
+  diavencimento?: number | null;
   tags?: number[]; // IDs das tags
 }
 
@@ -73,6 +74,7 @@ export async function createConta(data: ContaInput) {
       debitoauto: fields.debitoauto ?? false,
       pagamentomanual: fields.pagamentomanual ?? false,
       qtdparcela: fields.qtdparcela ?? null,
+      diavencimento: fields.diavencimento ?? null,
       ...(tags?.length && {
         contatag: { create: tags.map((id_tags) => ({ id_tags })) },
       }),
@@ -103,6 +105,7 @@ export async function updateConta(id: number, data: Partial<ContaInput>) {
       ...(fields.debitoauto !== undefined && { debitoauto: fields.debitoauto }),
       ...(fields.pagamentomanual !== undefined && { pagamentomanual: fields.pagamentomanual }),
       ...(fields.qtdparcela !== undefined && { qtdparcela: fields.qtdparcela }),
+      ...(fields.diavencimento !== undefined && { diavencimento: fields.diavencimento }),
       ...(tags?.length && {
         contatag: { create: tags.map((id_tags) => ({ id_tags })) },
       }),
@@ -122,6 +125,22 @@ export async function deleteConta(id: number) {
   await prisma.contatag.deleteMany({ where: { id_conta: id } });
   await prisma.contapagamentos.deleteMany({ where: { id_conta: id } });
   return prisma.conta.delete({ where: { idconta: id } });
+}
+
+// Relatório de impressão — contas a pagar ordenadas por dia de vencimento
+export function relatorioContasPagar() {
+  return prisma.conta.findMany({
+    where: { tipoconta: 'P' },
+    include: {
+      membrofamilia: { select: { idmembrofamilia: true, nome: true } },
+      credor: { select: { idcredor: true, nome: true } },
+    },
+    orderBy: [
+      // nulos por último, depois ordena pelo dia
+      { diavencimento: { sort: 'asc', nulls: 'last' } },
+      { descricao: 'asc' },
+    ],
+  });
 }
 
 // Tags vinculadas

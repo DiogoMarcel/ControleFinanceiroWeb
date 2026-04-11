@@ -6,6 +6,27 @@
   }
 }
 
+@media print {
+  /* Oculta a sidebar, topbar e bottom nav */
+  nav, aside, header, [data-sidebar], [data-topbar], [data-bottomnav] {
+    display: none !important;
+  }
+  /* Fundo branco, sem sombras */
+  body, #root {
+    background: white !important;
+  }
+  /* Garante que o conteúdo ocupe a página inteira */
+  main, .print\:p-0 {
+    padding: 0 !important;
+    margin: 0 !important;
+    max-width: 100% !important;
+  }
+  /* Evita quebra de página dentro de grupos */
+  table, tr {
+    break-inside: avoid;
+  }
+}
+
 @theme {
   --color-primary-50: #eff6ff;
   --color-primary-100: #dbeafe;

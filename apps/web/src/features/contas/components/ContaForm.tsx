@@ -21,6 +21,7 @@ const schema = z.object({
   debitoauto: z.boolean().default(false),
   pagamentomanual: z.boolean().default(false),
   qtdparcela: z.coerce.number().nullable().optional(),
+  diavencimento: z.coerce.number().int().min(1).max(31).nullable().optional(),
   tags: z.array(z.number()).default([]),
 });
 
@@ -38,11 +39,13 @@ export interface ContaFormData {
   debitoauto?: boolean;
   pagamentomanual?: boolean;
   qtdparcela?: number | null;
+  diavencimento?: number | null;
   tags?: number[];
 }
 
 interface ContaExistente extends ContaFormData {
   idconta: number;
+  diavencimento?: number | null;
   contatag?: { tags: { idtags: number } | null }[];
 }
 
@@ -115,6 +118,7 @@ export function ContaForm({ conta, defaultTipo = 'P', onSuccess, onCancel }: Con
         debitoauto: conta.debitoauto ?? false,
         pagamentomanual: conta.pagamentomanual ?? false,
         qtdparcela: conta.qtdparcela ?? undefined,
+        diavencimento: conta.diavencimento ?? undefined,
         tags: conta.contatag?.map((ct) => ct.tags?.idtags).filter(Boolean) as number[] ?? [],
       });
     }
@@ -126,6 +130,7 @@ export function ContaForm({ conta, defaultTipo = 'P', onSuccess, onCancel }: Con
       id_membrofamilia: data.id_membrofamilia || null,
       id_credor: data.id_credor || null,
       qtdparcela: data.qtdparcela || null,
+      diavencimento: data.diavencimento || null,
     };
     if (conta) updateMutation.mutate(payload);
     else createMutation.mutate(payload);
@@ -152,8 +157,8 @@ export function ContaForm({ conta, defaultTipo = 'P', onSuccess, onCancel }: Con
         ))}
       </div>
 
-      {/* Descrição + Valor */}
-      <div className="grid grid-cols-3 gap-3">
+      {/* Descrição + Valor + Dia Vencimento */}
+      <div className="grid grid-cols-4 gap-3">
         <div className="col-span-2">
           <label className={labelClass}>Descrição</label>
           <input {...register('descricao')} className={inputClass} placeholder="Ex: Conta de luz" />
@@ -163,6 +168,18 @@ export function ContaForm({ conta, defaultTipo = 'P', onSuccess, onCancel }: Con
           <label className={labelClass}>Valor (R$)</label>
           <input {...register('valor')} type="number" step="0.01" className={inputClass} />
           {errors.valor && <p className="text-xs text-red-500 mt-1">{errors.valor.message}</p>}
+        </div>
+        <div>
+          <label className={labelClass}>Dia venc.</label>
+          <input
+            {...register('diavencimento')}
+            type="number"
+            min="1"
+            max="31"
+            placeholder="—"
+            className={inputClass}
+          />
+          {errors.diavencimento && <p className="text-xs text-red-500 mt-1">1–31</p>}
         </div>
       </div>
 

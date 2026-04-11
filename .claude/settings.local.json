@@ -10,7 +10,13 @@
       "Bash(timeout 12 npx vite build)",
       "Bash(npm --version)",
       "Bash(npx turbo:*)",
-      "Bash(node scripts/set-admin-claim.mjs diogo.dmds@gmail.com)"
+      "Bash(node scripts/set-admin-claim.mjs diogo.dmds@gmail.com)",
+      "Bash(echo \"API: $?\")",
+      "Bash(echo \"Web: $?\")",
+      "Bash(cd \"D:\\\\\\\\Projetos\\\\\\\\IA - Web\\\\\\\\ControleFinanceiroWeb\")",
+      "Bash(node_modules/.bin/tsc --noEmit --project apps/api/tsconfig.json)",
+      "Bash(node_modules/.bin/tsc --noEmit --project apps/web/tsconfig.json)",
+      "Bash(npm run:*)"
     ]
   }
 }

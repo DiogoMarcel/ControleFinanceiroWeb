@@ -8,7 +8,8 @@ import { PageSkeleton } from '@/components/ui';
 // Lazy loading — cada página é um chunk separado, carregado só quando acessado
 const DashboardPage    = lazy(() => import('@/features/dashboard/DashboardPage').then(m => ({ default: m.DashboardPage })));
 const PortadoresPage   = lazy(() => import('@/features/portadores/PortadoresPage').then(m => ({ default: m.PortadoresPage })));
-const ContasMesPage    = lazy(() => import('@/features/contas/ContasMesPage').then(m => ({ default: m.ContasMesPage })));
+const ContasMesPage      = lazy(() => import('@/features/contas/ContasMesPage').then(m => ({ default: m.ContasMesPage })));
+const ContasImprimirPage = lazy(() => import('@/features/contas/ContasImprimirPage').then(m => ({ default: m.ContasImprimirPage })));
 const ConfiguracoesPage = lazy(() => import('@/features/configuracoes/ConfiguracoesPage').then(m => ({ default: m.ConfiguracoesPage })));
 const ExtratoPage      = lazy(() => import('@/features/extrato/ExtratoPage').then(m => ({ default: m.ExtratoPage })));
 const CartoesPage      = lazy(() => import('@/features/cartoes/CartoesPage').then(m => ({ default: m.CartoesPage })));
@@ -38,6 +39,14 @@ export function AppRouter() {
             element={
               <Suspense fallback={<PageSkeleton />}>
                 <ContasMesPage />
+              </Suspense>
+            }
+          />
+          <Route
+            path="/contas/imprimir"
+            element={
+              <Suspense fallback={<PageSkeleton />}>
+                <ContasImprimirPage />
               </Suspense>
             }
           />
