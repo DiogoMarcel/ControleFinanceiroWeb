@@ -14,10 +14,10 @@ import { ptBR } from 'date-fns/locale';
 interface AluguelConta {
   idaluguelconta: number;
   id_aluguel: number | null;
-  tipoconta: string;   // 'R' | 'P'
-  valor: number;
+  tipoconta: string;       // 'R'=receita/cobrança | 'P'=pagamento/desconto
+  valor: number;           // pode ser negativo no banco (legado Delphi)
   descricao: string;
-  compartilhado: string; // 'N' = só meu | 'S' = ambos | 'C' = só compartilhado
+  compartilhado: string;   // 'V'=ambos(÷2) | 'S'=só comp | 'F'=só meu lado
 }
 
 interface AluguelComp {
@@ -39,36 +39,61 @@ interface Aluguel {
 
 function anoAtual() { return String(new Date().getFullYear()); }
 
+// dataaluguel pode chegar como "2026-03-01T00:00:00.000Z" ou "2026-03-01"
+function toDateStr(date: string) { return date.length > 10 ? date.slice(0, 10) : date; }
+
 function mesAnoLabel(date: string) {
   try {
-    return format(new Date(date + 'T12:00:00'), "MMMM '/' yyyy", { locale: ptBR });
+    return format(new Date(toDateStr(date) + 'T12:00:00'), "MMMM '/' yyyy", { locale: ptBR });
   } catch { return date; }
 }
 
 function mesAnoShort(date: string) {
   try {
-    return format(new Date(date + 'T12:00:00'), 'MMM/yyyy', { locale: ptBR });
+    return format(new Date(toDateStr(date) + 'T12:00:00'), 'MMM/yyyy', { locale: ptBR });
   } catch { return date; }
 }
 
 function isPago(a: Aluguel) { return a.datapagamento !== null; }
 function isPagoComp(a: Aluguel) { return (a.aluguelcomp[0]?.datapagamento ?? null) !== null; }
 
-// Cálculos dos dois lados
-function calcMeuLado(a: Aluguel) {
-  const base = a.valoraluguel ?? 0;
-  const cobr = a.aluguelconta
-    .filter(c => c.compartilhado === 'N' || c.compartilhado === 'S')
-    .reduce((s, c) => s + c.valor, 0);
-  return base + cobr;
+/**
+ * Valor efetivo de um item, respeitando tipoconta como sinal:
+ * 'R' → positivo (cobrança/receita)
+ * 'P' → negativo (pagamento/desconto)
+ * Normaliza também valores negativos no banco (legado Delphi).
+ */
+function effectiveValor(c: AluguelConta): number {
+  return c.tipoconta === 'R' ? Math.abs(c.valor) : -Math.abs(c.valor);
 }
 
-function calcCompLado(a: Aluguel) {
-  const meuPagamento = (a.valoraluguel ?? 0) / 2; // o que pago ao compartilhado
-  const compMeDeve = a.aluguelconta
-    .filter(c => c.compartilhado === 'S' || c.compartilhado === 'C')
-    .reduce((s, c) => s + c.valor, 0);
-  return meuPagamento - compMeDeve; // positivo = ainda pago ao comp; negativo = comp me paga
+/**
+ * LEFT total = valoraluguel
+ *   + soma dos itens 'F' (só meu lado) pelo effectiveValor
+ *   + soma dos itens 'V' (ambos) pelo effectiveValor/2
+ */
+function calcMeuLado(a: Aluguel): number {
+  const base = a.valoraluguel ?? 0;
+  const f = a.aluguelconta.filter(c => c.compartilhado === 'F')
+    .reduce((s, c) => s + effectiveValor(c), 0);
+  const v = a.aluguelconta.filter(c => c.compartilhado === 'V')
+    .reduce((s, c) => s + effectiveValor(c) / 2, 0);
+  return base + f + v;
+}
+
+/**
+ * RIGHT total = valoraluguel/2 (o que pago ao comp)
+ *   − soma dos itens 'S' (só comp) pelo effectiveValor
+ *   − soma dos itens 'V' (ambos) pelo effectiveValor/2
+ * Positivo = ainda pago ao comp; Negativo = comp me paga.
+ */
+function calcCompLado(a: Aluguel): number {
+  const compBase = (a.valoraluguel ?? 0) / 2;
+  const s = a.aluguelconta.filter(c => c.compartilhado === 'S')
+    .reduce((s, c) => s + effectiveValor(c), 0);
+  const v = a.aluguelconta.filter(c => c.compartilhado === 'V')
+    .reduce((s, c) => s + effectiveValor(c) / 2, 0);
+  return compBase - s - v;
 }
 
 // ── Modal ──────────────────────────────────────────────────────────────────
@@ -98,9 +123,8 @@ interface AluguelFormProps {
 }
 
 function AluguelForm({ initial, valorSugerido, onSubmit, onCancel, loading }: AluguelFormProps) {
-  // "2026-04-01" → "2026-04" para o input month
   const mesInicial = initial?.dataaluguel
-    ? initial.dataaluguel.slice(0, 7)
+    ? toDateStr(initial.dataaluguel).slice(0, 7)
     : (() => {
         const d = new Date();
         return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
@@ -119,38 +143,25 @@ function AluguelForm({ initial, valorSugerido, onSubmit, onCancel, loading }: Al
     <form
       onSubmit={e => {
         e.preventDefault();
-        // Converte "2026-04" → "2026-04-01" para o banco
         onSubmit({ dataaluguel: `${mes}-01`, valoraluguel });
       }}
       className="space-y-4"
     >
       <div>
-        <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
-          Mês / Ano *
-        </label>
-        <input
-          required
-          type="month"
-          value={mes}
-          onChange={e => setMes(e.target.value)}
-          className={inputCls}
-        />
+        <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Mês / Ano *</label>
+        <input required type="month" value={mes} onChange={e => setMes(e.target.value)} className={inputCls} />
       </div>
       <div>
         <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
-          Valor (R$)
+          Valor total do aluguel (R$)
           {!initial && valorSugerido != null && (
             <span className="ml-1.5 text-slate-400 font-normal">— sugerido do mês anterior</span>
           )}
         </label>
         <input
-          type="number"
-          step="0.01"
-          min="0"
-          value={valoraluguel}
-          onChange={e => setValor(e.target.value)}
-          className={inputCls}
-          placeholder="0,00"
+          type="number" step="0.01" min="0"
+          value={valoraluguel} onChange={e => setValor(e.target.value)}
+          className={inputCls} placeholder="0,00"
         />
       </div>
       <div className="flex justify-end gap-2 pt-2">
@@ -176,11 +187,19 @@ interface ContaFormProps {
 
 function ContaForm({ initial, onSubmit, onCancel, loading }: ContaFormProps) {
   const [tipoconta, setTipo] = useState(initial?.tipoconta ?? 'R');
-  const [valor, setValor] = useState(String(initial?.valor ?? ''));
+  // valor exibido sempre positivo; tipoconta determina o sinal
+  const [valor, setValor] = useState(initial?.valor != null ? String(Math.abs(initial.valor)) : '');
   const [descricao, setDescricao] = useState(initial?.descricao ?? '');
-  const [compartilhado, setComp] = useState(initial?.compartilhado ?? 'S');
+  // default 'V' para novos itens compartilhados
+  const [compartilhado, setComp] = useState(initial?.compartilhado ?? 'V');
 
   const inputCls = 'w-full border border-slate-300 dark:border-slate-600 rounded-lg px-3 py-2 text-sm bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500';
+
+  const hints: Record<string, string> = {
+    V: 'Aparece em AMBOS os lados, cada um paga metade (ex: água, internet).',
+    S: 'Aparece só no lado COMPARTILHADO — o comp me deve o valor integral.',
+    F: 'Aparece só no MEU LADO (ex: luz individual, pagamento do inquilino).',
+  };
 
   return (
     <form
@@ -195,8 +214,8 @@ function ContaForm({ initial, onSubmit, onCancel, loading }: ContaFormProps) {
         <div>
           <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Tipo *</label>
           <select value={tipoconta} onChange={e => setTipo(e.target.value)} className={inputCls}>
-            <option value="R">Receita</option>
-            <option value="P">Despesa</option>
+            <option value="R">Cobrança (+)</option>
+            <option value="P">Desconto / Pagto (−)</option>
           </select>
         </div>
         <div>
@@ -207,15 +226,11 @@ function ContaForm({ initial, onSubmit, onCancel, loading }: ContaFormProps) {
       <div>
         <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Visibilidade</label>
         <select value={compartilhado} onChange={e => setComp(e.target.value)} className={inputCls}>
-          <option value="N">Somente meu lado</option>
-          <option value="S">Ambos (compartilhado)</option>
-          <option value="C">Somente compartilhado</option>
+          <option value="V">Ambos — cada lado paga metade</option>
+          <option value="S">Só compartilhado — comp me deve o total</option>
+          <option value="F">Só meu lado — não afeta o comp</option>
         </select>
-        <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">
-          {compartilhado === 'N' && 'Aparece só no meu lado (ex: luz individual).'}
-          {compartilhado === 'S' && 'Aparece em ambos os lados — o compartilhado me deve este valor (ex: água, internet).'}
-          {compartilhado === 'C' && 'Aparece só no lado compartilhado — ele me deve este valor.'}
-        </p>
+        <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">{hints[compartilhado]}</p>
       </div>
       <div className="flex justify-end gap-2 pt-2">
         <button type="button" onClick={onCancel} className="px-4 py-2 text-sm rounded-lg border border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors">
@@ -232,9 +247,10 @@ function ContaForm({ initial, onSubmit, onCancel, loading }: ContaFormProps) {
 // ── Linha de item ──────────────────────────────────────────────────────────
 
 function ItemRow({
-  conta, isAdmin, onEdit, onDelete, deleting,
+  conta, half, isAdmin, onEdit, onDelete, deleting,
 }: {
   conta: AluguelConta;
+  half?: boolean;         // V items mostram valor/2
   isAdmin: boolean;
   onEdit: () => void;
   onDelete: () => void;
@@ -242,19 +258,23 @@ function ItemRow({
 }) {
   const [confirm, setConfirm] = useState(false);
 
-  const compLabel: Record<string, { label: string; cls: string }> = {
-    N: { label: 'Meu', cls: 'bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400' },
-    S: { label: 'Ambos', cls: 'bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400' },
-    C: { label: 'Comp', cls: 'bg-purple-100 dark:bg-purple-900/40 text-purple-600 dark:text-purple-400' },
+  const badgeMap: Record<string, { label: string; cls: string }> = {
+    V: { label: 'Ambos', cls: 'bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400' },
+    S: { label: 'Comp', cls: 'bg-purple-100 dark:bg-purple-900/40 text-purple-600 dark:text-purple-400' },
+    F: { label: 'Meu', cls: 'bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400' },
   };
-  const badge = compLabel[conta.compartilhado] ?? compLabel['N'];
+  const badge = badgeMap[conta.compartilhado] ?? badgeMap['F'];
+
+  const absVal = Math.abs(conta.valor);
+  const displayVal = half ? absVal / 2 : absVal;
+  const isPositive = conta.tipoconta === 'R';
 
   return (
     <div className="flex items-center gap-2 px-3 py-2 hover:bg-slate-50 dark:hover:bg-slate-700/30 rounded-lg transition-colors">
       <span className={`text-xs font-medium px-1.5 py-0.5 rounded flex-shrink-0 ${badge.cls}`}>{badge.label}</span>
       <span className="text-sm text-slate-700 dark:text-slate-300 flex-1 truncate">{conta.descricao}</span>
-      <span className={`text-sm font-semibold whitespace-nowrap ${conta.tipoconta === 'R' ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-500 dark:text-red-400'}`}>
-        {conta.tipoconta === 'R' ? '+' : '-'}{formatCurrency(conta.valor)}
+      <span className={`text-sm font-semibold whitespace-nowrap ${isPositive ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-500 dark:text-red-400'}`}>
+        {isPositive ? '+' : '−'}{formatCurrency(displayVal)}
       </span>
       {isAdmin && (
         <div className="flex items-center gap-0.5 flex-shrink-0">
@@ -323,7 +343,12 @@ function DetalhesPanel({ aluguel, isAdmin, ano }: { aluguel: Aluguel; isAdmin: b
   });
 
   function handleContaSubmit(vals: { tipoconta: string; valor: string; descricao: string; compartilhado: string }) {
-    const body = { tipoconta: vals.tipoconta, valor: Number(vals.valor), descricao: vals.descricao, compartilhado: vals.compartilhado };
+    const body = {
+      tipoconta: vals.tipoconta,
+      valor: Number(vals.valor),
+      descricao: vals.descricao,
+      compartilhado: vals.compartilhado,
+    };
     if (modalConta === 'editar' && editandoConta) {
       updateContaMut.mutate({ id: editandoConta.idaluguelconta, ...body });
     } else {
@@ -331,14 +356,15 @@ function DetalhesPanel({ aluguel, isAdmin, ano }: { aluguel: Aluguel; isAdmin: b
     }
   }
 
-  // Cálculos
   const valor = aluguel.valoraluguel ?? 0;
-  const itensN = aluguel.aluguelconta.filter(c => c.compartilhado === 'N');
+
+  // Separar itens por compartilhado
+  const itensF = aluguel.aluguelconta.filter(c => c.compartilhado === 'F');
+  const itensV = aluguel.aluguelconta.filter(c => c.compartilhado === 'V');
   const itensS = aluguel.aluguelconta.filter(c => c.compartilhado === 'S');
-  const itensC = aluguel.aluguelconta.filter(c => c.compartilhado === 'C');
 
   const totalMeu = calcMeuLado(aluguel);
-  const netComp = calcCompLado(aluguel); // positivo = pago ao comp; negativo = comp me paga
+  const netComp = calcCompLado(aluguel);
 
   const compDataPag = aluguel.aluguelcomp[0]?.datapagamento ?? null;
 
@@ -366,20 +392,16 @@ function DetalhesPanel({ aluguel, isAdmin, ano }: { aluguel: Aluguel; isAdmin: b
         )}
       </div>
 
-      {/* Dois lados lado a lado */}
+      {/* Dois lados */}
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
 
-        {/* ── Meu lado ─────────────────────────────────────────── */}
+        {/* ── Meu Lado — F + V(÷2) ──────────────────────────────── */}
         <div className="rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
           <div className="px-4 py-3 bg-slate-50 dark:bg-slate-700/50 border-b border-slate-200 dark:border-slate-700">
             <div className="flex items-center justify-between">
               <p className="text-xs font-semibold text-slate-600 dark:text-slate-300">Meu Lado</p>
               {isAdmin && (
-                <button
-                  onClick={() => marcarPagoMut.mutate()}
-                  disabled={marcarPagoMut.isPending}
-                  className={btnCls(isPago(aluguel))}
-                >
+                <button onClick={() => marcarPagoMut.mutate()} disabled={marcarPagoMut.isPending} className={btnCls(isPago(aluguel))}>
                   {isPago(aluguel)
                     ? <><CheckCircle2 className="w-3.5 h-3.5" /> Pago {formatDate(aluguel.datapagamento!)}</>
                     : <><Clock className="w-3.5 h-3.5" /> Marcar pago</>
@@ -399,20 +421,26 @@ function DetalhesPanel({ aluguel, isAdmin, ano }: { aluguel: Aluguel; isAdmin: b
               <span className="text-sm font-semibold text-slate-900 dark:text-white">{formatCurrency(valor)}</span>
             </div>
 
-            {/* Itens N + S */}
-            {[...itensN, ...itensS].length === 0 ? (
+            {/* Itens F (só meu) e V (ambos, mostrar ÷2) */}
+            {itensF.length === 0 && itensV.length === 0 ? (
               <p className="text-xs text-slate-400 dark:text-slate-500 py-2 text-center">Sem cobranças.</p>
             ) : (
-              [...itensN, ...itensS].map(c => (
-                <ItemRow
-                  key={c.idaluguelconta}
-                  conta={c}
-                  isAdmin={isAdmin}
-                  onEdit={() => { setEditandoConta(c); setModalConta('editar'); }}
-                  onDelete={() => deleteContaMut.mutate(c.idaluguelconta)}
-                  deleting={deleteContaMut.isPending}
-                />
-              ))
+              <>
+                {itensF.map(c => (
+                  <ItemRow key={c.idaluguelconta} conta={c} half={false} isAdmin={isAdmin}
+                    onEdit={() => { setEditandoConta(c); setModalConta('editar'); }}
+                    onDelete={() => deleteContaMut.mutate(c.idaluguelconta)}
+                    deleting={deleteContaMut.isPending}
+                  />
+                ))}
+                {itensV.map(c => (
+                  <ItemRow key={c.idaluguelconta} conta={c} half={true} isAdmin={isAdmin}
+                    onEdit={() => { setEditandoConta(c); setModalConta('editar'); }}
+                    onDelete={() => deleteContaMut.mutate(c.idaluguelconta)}
+                    deleting={deleteContaMut.isPending}
+                  />
+                ))}
+              </>
             )}
           </div>
 
@@ -422,17 +450,13 @@ function DetalhesPanel({ aluguel, isAdmin, ano }: { aluguel: Aluguel; isAdmin: b
           </div>
         </div>
 
-        {/* ── Lado Compartilhado ────────────────────────────────── */}
+        {/* ── Compartilhado — S + V(÷2) ────────────────────────── */}
         <div className="rounded-xl border border-purple-200 dark:border-purple-800 overflow-hidden">
           <div className="px-4 py-3 bg-purple-50 dark:bg-purple-900/20 border-b border-purple-200 dark:border-purple-800">
             <div className="flex items-center justify-between">
               <p className="text-xs font-semibold text-purple-700 dark:text-purple-400">Compartilhado</p>
               {isAdmin && (
-                <button
-                  onClick={() => marcarCompMut.mutate()}
-                  disabled={marcarCompMut.isPending}
-                  className={btnCls(isPagoComp(aluguel))}
-                >
+                <button onClick={() => marcarCompMut.mutate()} disabled={marcarCompMut.isPending} className={btnCls(isPagoComp(aluguel))}>
                   {isPagoComp(aluguel)
                     ? <><CheckCircle2 className="w-3.5 h-3.5" /> Pago {formatDate(compDataPag!)}</>
                     : <><Clock className="w-3.5 h-3.5" /> Marcar pago</>
@@ -446,26 +470,32 @@ function DetalhesPanel({ aluguel, isAdmin, ano }: { aluguel: Aluguel; isAdmin: b
           </div>
 
           <div className="px-4 py-3 space-y-1">
-            {/* Aluguel comp = metade, é o que eu pago a eles */}
+            {/* Minha parte do aluguel paga ao comp */}
             <div className="flex items-center justify-between py-1 border-b border-slate-100 dark:border-slate-700 mb-2">
               <span className="text-xs text-slate-500 dark:text-slate-400">Aluguel (pago ao comp)</span>
               <span className="text-sm font-semibold text-red-500 dark:text-red-400">−{formatCurrency(valor / 2)}</span>
             </div>
 
-            {/* Itens S + C (o que comp me deve) */}
-            {[...itensS, ...itensC].length === 0 ? (
+            {/* Itens S (só comp) e V (ambos, ÷2) — o comp me deve esses valores */}
+            {itensS.length === 0 && itensV.length === 0 ? (
               <p className="text-xs text-slate-400 dark:text-slate-500 py-2 text-center">Sem cobranças ao compartilhado.</p>
             ) : (
-              [...itensS, ...itensC].map(c => (
-                <ItemRow
-                  key={c.idaluguelconta}
-                  conta={c}
-                  isAdmin={isAdmin}
-                  onEdit={() => { setEditandoConta(c); setModalConta('editar'); }}
-                  onDelete={() => deleteContaMut.mutate(c.idaluguelconta)}
-                  deleting={deleteContaMut.isPending}
-                />
-              ))
+              <>
+                {itensV.map(c => (
+                  <ItemRow key={c.idaluguelconta} conta={c} half={true} isAdmin={isAdmin}
+                    onEdit={() => { setEditandoConta(c); setModalConta('editar'); }}
+                    onDelete={() => deleteContaMut.mutate(c.idaluguelconta)}
+                    deleting={deleteContaMut.isPending}
+                  />
+                ))}
+                {itensS.map(c => (
+                  <ItemRow key={c.idaluguelconta} conta={c} half={false} isAdmin={isAdmin}
+                    onEdit={() => { setEditandoConta(c); setModalConta('editar'); }}
+                    onDelete={() => deleteContaMut.mutate(c.idaluguelconta)}
+                    deleting={deleteContaMut.isPending}
+                  />
+                ))}
+              </>
             )}
           </div>
 
@@ -516,14 +546,12 @@ export function AlugueisPage() {
     queryFn: async () => (await api.get('/alugueis', { params: { ano } })).data,
   });
 
-  // Último valor (qualquer ano) para sugestão
   const { data: ultimo } = useQuery<{ valoraluguel: number | null } | null>({
     queryKey: ['alugueis', 'ultimo'],
     queryFn: async () => (await api.get('/alugueis/ultimo')).data,
     staleTime: 60_000,
   });
 
-  // Sugestão: primeiro registro do ano atual (mais recente) ou último valor de todos os anos
   const valorSugerido = alugueis[0]?.valoraluguel ?? ultimo?.valoraluguel ?? null;
 
   const createMut = useMutation({
@@ -643,7 +671,7 @@ export function AlugueisPage() {
                       : 'hover:bg-slate-50 dark:hover:bg-slate-700/30'
                   }`}
                 >
-                  {/* Status icons empilhados */}
+                  {/* Status icons: meu lado + comp */}
                   <div className="flex flex-col gap-0.5 flex-shrink-0 mt-0.5">
                     {isPago(a)
                       ? <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
@@ -696,7 +724,11 @@ export function AlugueisPage() {
         {/* Painel de detalhes */}
         <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-5">
           {selecionado ? (
-            <DetalhesPanel aluguel={selecionado} isAdmin={isAdmin} ano={ano} />
+            <DetalhesPanel
+              aluguel={selecionado}
+              isAdmin={isAdmin}
+              ano={ano}
+            />
           ) : (
             <div className="flex flex-col items-center justify-center h-48 text-slate-400 dark:text-slate-500 text-sm gap-2">
               <Building2 className="w-8 h-8 opacity-30" />
