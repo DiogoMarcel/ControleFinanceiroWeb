@@ -9,6 +9,7 @@ import { ConfiguracoesPage } from '@/features/configuracoes/ConfiguracoesPage';
 import { ExtratoPage } from '@/features/extrato/ExtratoPage';
 import { CartoesPage } from '@/features/cartoes/CartoesPage';
 import { RelatoriosPage } from '@/features/relatorios/RelatoriosPage';
+import { VeiculosPage } from '@/features/veiculos/VeiculosPage';
 
 function Placeholder({ title }: { title: string }) {
   return (
@@ -33,7 +34,7 @@ export function AppRouter() {
         <Route path="/extrato" element={<ExtratoPage />} />
         <Route path="/cartoes" element={<CartoesPage />} />
         <Route path="/relatorios" element={<RelatoriosPage />} />
-        <Route path="/veiculos" element={<Placeholder title="Veículos" />} />
+        <Route path="/veiculos" element={<VeiculosPage />} />
         <Route path="/alugueis" element={<Placeholder title="Aluguéis" />} />
         <Route path="/fgts" element={<Placeholder title="FGTS" />} />
         <Route path="/configuracoes" element={<ConfiguracoesPage />} />
