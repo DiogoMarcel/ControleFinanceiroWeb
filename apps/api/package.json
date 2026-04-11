@@ -7,7 +7,7 @@
     "dev": "tsx watch src/server.ts",
     "build": "tsc",
     "lint": "eslint .",
-    "test": "node --experimental-vm-modules node_modules/.bin/jest",
+    "test": "node --experimental-vm-modules ../../node_modules/jest/bin/jest.js",
     "clean": "rm -rf dist .turbo"
   },
   "dependencies": {
@@ -28,13 +28,24 @@
       ".ts"
     ],
     "moduleNameMapper": {
-      "^(\\.{1,2}/.*)\\.js$": "$1"
+      "^(\\.{1,2}/.*)\\.js$": "$1",
+      "^firebase-admin/app$": "<rootDir>/src/__tests__/__mocks__/firebase-admin-app.ts",
+      "^firebase-admin/auth$": "<rootDir>/src/__tests__/__mocks__/firebase-admin-auth.ts"
     },
     "testEnvironment": "node",
     "testMatch": [
-      "**/__tests__/**/*.ts",
+      "**/__tests__/**/*.test.ts",
       "**/*.test.ts"
-    ]
+    ],
+    "transform": {
+      "^.+\\.ts$": [
+        "ts-jest",
+        {
+          "useESM": true,
+          "tsconfig": "tsconfig.test.json"
+        }
+      ]
+    }
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
