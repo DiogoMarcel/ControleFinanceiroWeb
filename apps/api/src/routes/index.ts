@@ -9,6 +9,7 @@ import { cartoesRoutes } from './cartoes.js';
 import { relatoriosRoutes } from './relatorios.js';
 import { veiculosRoutes } from './veiculos.js';
 import { fgtsRoutes } from './fgts.js';
+import { alugueisRoutes } from './alugueis.js';
 
 export async function registerRoutes(app: FastifyInstance): Promise<void> {
   app.register(dashboardRoutes, { prefix: '/api/v1' });
@@ -21,4 +22,5 @@ export async function registerRoutes(app: FastifyInstance): Promise<void> {
   app.register(relatoriosRoutes, { prefix: '/api/v1' });
   app.register(veiculosRoutes, { prefix: '/api/v1' });
   app.register(fgtsRoutes, { prefix: '/api/v1' });
+  app.register(alugueisRoutes, { prefix: '/api/v1' });
 }
