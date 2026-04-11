@@ -10,6 +10,7 @@ import { ExtratoPage } from '@/features/extrato/ExtratoPage';
 import { CartoesPage } from '@/features/cartoes/CartoesPage';
 import { RelatoriosPage } from '@/features/relatorios/RelatoriosPage';
 import { VeiculosPage } from '@/features/veiculos/VeiculosPage';
+import { FgtsPage } from '@/features/fgts/FgtsPage';
 
 function Placeholder({ title }: { title: string }) {
   return (
@@ -36,7 +37,7 @@ export function AppRouter() {
         <Route path="/relatorios" element={<RelatoriosPage />} />
         <Route path="/veiculos" element={<VeiculosPage />} />
         <Route path="/alugueis" element={<Placeholder title="Aluguéis" />} />
-        <Route path="/fgts" element={<Placeholder title="FGTS" />} />
+        <Route path="/fgts" element={<FgtsPage />} />
         <Route path="/configuracoes" element={<ConfiguracoesPage />} />
         </Route>
       </Route>
