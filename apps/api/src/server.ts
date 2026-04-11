@@ -18,8 +18,19 @@ await app.register(rateLimit, {
   max: 100,
   timeWindow: '1 minute',
 });
+const allowedOrigins = (process.env['ALLOWED_ORIGIN'] ?? 'http://localhost:5173')
+  .split(',')
+  .map(o => o.trim());
+
 await app.register(cors, {
-  origin: process.env['ALLOWED_ORIGIN'] ?? 'http://localhost:5173',
+  origin: (origin, cb) => {
+    if (!origin || allowedOrigins.includes(origin)) return cb(null, true);
+    // Em desenvolvimento, aceita qualquer origem da rede local
+    if (process.env['NODE_ENV'] !== 'production' && /^http:\/\/192\.168\./.test(origin)) {
+      return cb(null, true);
+    }
+    cb(new Error('Not allowed by CORS'), false);
+  },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
 });
