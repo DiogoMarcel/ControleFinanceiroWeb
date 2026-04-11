@@ -536,7 +536,7 @@ export function AlugueisPage() {
   const qc = useQueryClient();
 
   const [ano, setAno] = useState(anoAtual());
-  const [selecionado, setSelecionado] = useState<Aluguel | null>(null);
+  const [selecionadoId, setSelecionadoId] = useState<number | null>(null);
   const [modal, setModal] = useState<'novo' | 'editar' | null>(null);
   const [editando, setEditando] = useState<Aluguel | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<number | null>(null);
@@ -552,6 +552,7 @@ export function AlugueisPage() {
     staleTime: 60_000,
   });
 
+  const selecionado = alugueis.find(a => a.idaluguel === selecionadoId) ?? null;
   const valorSugerido = alugueis[0]?.valoraluguel ?? ultimo?.valoraluguel ?? null;
 
   const createMut = useMutation({
@@ -568,7 +569,7 @@ export function AlugueisPage() {
     mutationFn: (id: number) => api.delete(`/alugueis/${id}`),
     onSuccess: (_, id) => {
       qc.invalidateQueries({ queryKey: ['alugueis', ano] });
-      if (selecionado?.idaluguel === id) setSelecionado(null);
+      if (selecionadoId === id) setSelecionadoId(null);
       setConfirmDelete(null);
     },
   });
@@ -602,7 +603,7 @@ export function AlugueisPage() {
           <h1 className="text-xl font-semibold text-slate-900 dark:text-white">Aluguéis</h1>
         </div>
         <div className="flex items-center gap-2">
-          <select value={ano} onChange={e => { setAno(e.target.value); setSelecionado(null); }} className={selectCls}>
+          <select value={ano} onChange={e => { setAno(e.target.value); setSelecionadoId(null); }} className={selectCls}>
             {anos.map(a => <option key={a} value={a}>{a}</option>)}
           </select>
           {isAdmin && (
@@ -664,7 +665,7 @@ export function AlugueisPage() {
               {alugueis.map(a => (
                 <li
                   key={a.idaluguel}
-                  onClick={() => setSelecionado(a)}
+                  onClick={() => setSelecionadoId(a.idaluguel)}
                   className={`flex items-start gap-2.5 px-3 py-3 cursor-pointer transition-colors ${
                     selecionado?.idaluguel === a.idaluguel
                       ? 'bg-blue-50 dark:bg-blue-900/30'
