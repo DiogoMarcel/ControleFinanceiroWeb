@@ -27,11 +27,17 @@ export function ContasImprimirPage() {
   const agora = new Date().toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
 
   const grupos = contas.reduce<Record<string, ContaRelatorio[]>>((acc, c) => {
-    const key = c.membrofamilia?.nome ?? 'Compartilhado';
+    const key = c.diavencimento != null ? String(c.diavencimento).padStart(2, '0') : '—';
     if (!acc[key]) acc[key] = [];
     acc[key].push(c);
     return acc;
   }, {});
+
+  const gruposOrdenados = Object.entries(grupos).sort(([a], [b]) => {
+    if (a === '—') return 1;
+    if (b === '—') return -1;
+    return Number(a) - Number(b);
+  });
 
   return (
     <>
@@ -72,39 +78,38 @@ export function ContasImprimirPage() {
               </div>
             </div>
 
-            {/* Tabelas por grupo */}
-            {Object.entries(grupos).map(([membro, items]) => {
-              const subtotal = items.reduce((s, c) => s + c.valor, 0);
-              return (
-                <div key={membro} className="mb-3 last:mb-0">
-                  {/* Header do grupo */}
-                  <div className="flex items-center justify-between bg-slate-100 print:bg-slate-100 px-1.5 py-0.5 rounded mb-0.5">
-                    <span className="text-xs font-bold text-slate-700 uppercase tracking-wide">{membro}</span>
-                    <span className="text-xs font-bold text-slate-700 tabular-nums">{formatCurrency(subtotal)}</span>
-                  </div>
-
-                  <table className="w-full border-collapse">
-                    <thead>
-                      <tr className="text-slate-400 border-b border-slate-200">
-                        <th className="py-0.5 text-left text-[10px] uppercase tracking-wide w-6 font-medium">Dia</th>
-                        <th className="py-0.5 text-left text-[10px] uppercase tracking-wide font-medium">Descrição</th>
-                        <th className="py-0.5 text-left text-[10px] uppercase tracking-wide font-medium">Credor</th>
-                        <th className="py-0.5 text-right text-[10px] uppercase tracking-wide w-24 font-medium">Valor</th>
-                        <th className="py-0.5 text-center text-[10px] w-6 font-medium">✓</th>
+            {/* Tabela única com separadores de dia */}
+            <table className="w-full border-collapse">
+              <thead>
+                <tr className="text-slate-400 border-b border-slate-200">
+                  <th className="py-0.5 text-left text-[10px] uppercase tracking-wide font-medium">Descrição</th>
+                  <th className="py-0.5 text-left text-[10px] uppercase tracking-wide font-medium">Credor</th>
+                  <th className="py-0.5 text-left text-[10px] uppercase tracking-wide font-medium">Membro</th>
+                  <th className="py-0.5 text-right text-[10px] uppercase tracking-wide w-24 font-medium">Valor</th>
+                  <th className="py-0.5 text-center text-[10px] w-6 font-medium">✓</th>
+                </tr>
+              </thead>
+              <tbody>
+                {gruposOrdenados.map(([dia, items]) => {
+                  const subtotal = items.reduce((s, c) => s + c.valor, 0);
+                  const label = dia === '—' ? 'Sem data' : `Dia ${dia}`;
+                  return (
+                    <>
+                      {/* Separador de dia */}
+                      <tr key={`sep-${dia}`} className="bg-slate-100 print:bg-slate-100">
+                        <td colSpan={4} className="px-1.5 py-0.5 text-[10px] font-bold text-slate-700 uppercase tracking-wide">
+                          {label}
+                        </td>
+                        <td className="px-1.5 py-0.5 text-[10px] font-bold text-slate-700 tabular-nums text-right">
+                          {formatCurrency(subtotal)}
+                        </td>
                       </tr>
-                    </thead>
-                    <tbody>
+                      {/* Itens do dia */}
                       {items.map((c, i) => (
                         <tr
                           key={c.idconta}
                           className={i % 2 === 0 ? 'bg-white' : 'bg-slate-50 print:bg-slate-50'}
                         >
-                          <td className="py-0.5 text-[11px] tabular-nums text-slate-500 pl-0.5">
-                            {c.diavencimento != null
-                              ? <span className="font-semibold text-slate-700">{String(c.diavencimento).padStart(2, '0')}</span>
-                              : <span className="text-slate-300">—</span>
-                            }
-                          </td>
                           <td className="py-0.5 text-[11px] text-slate-800 leading-tight">
                             {c.descricao}
                             {(c.debitacartao || c.debitoauto) && (
@@ -116,6 +121,9 @@ export function ContasImprimirPage() {
                           <td className="py-0.5 text-[11px] text-slate-500 leading-tight">
                             {c.credor?.nome ?? ''}
                           </td>
+                          <td className="py-0.5 text-[11px] text-slate-400 leading-tight">
+                            {c.membrofamilia?.nome ?? ''}
+                          </td>
                           <td className="py-0.5 text-[11px] text-right font-semibold tabular-nums text-slate-800">
                             {formatCurrency(c.valor)}
                           </td>
@@ -124,11 +132,11 @@ export function ContasImprimirPage() {
                           </td>
                         </tr>
                       ))}
-                    </tbody>
-                  </table>
-                </div>
-              );
-            })}
+                    </>
+                  );
+                })}
+              </tbody>
+            </table>
 
             {/* Rodapé */}
             <div className="mt-3 pt-2 border-t border-slate-300 flex items-center justify-between">

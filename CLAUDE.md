@@ -2,6 +2,21 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Launcher (Windows)
+
+`iniciar.bat` — double-click or use the Desktop shortcut to start the full stack:
+- Detects the current local IP and writes `apps/web/.env.local` with `VITE_API_URL=http://<IP>:3001/api/v1`
+- Opens a terminal window running `npm run dev`
+- Polls `localhost:3001/health` and `localhost:5173` until both are up
+- Opens the browser automatically and prints both Desktop and mobile URLs
+
+Run once to create the Desktop shortcut:
+```powershell
+powershell -ExecutionPolicy Bypass -File "criar-atalho-desktop.ps1"
+```
+
+`apps/web/.env.local` is gitignored — it is regenerated on every launch with the current IP.
+
 ## Commands
 
 ### Development (from repo root)
