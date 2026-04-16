@@ -90,6 +90,10 @@ Turborepo orchestrates builds; npm workspaces handle dependencies. `@cfweb/share
 
 **`saldoportador`**: `contacapital !== true` (not `!== false`) correctly handles nullable booleans — `null` and `false` should both be treated as non-capital.
 
+**`saldoextrato`**: written automatically whenever `saldoportador` is created or updated via `portadores.service.ts`. The service uses `prisma.$transaction` to atomically update the portador balance and append a row to `saldoextrato`. The `descricao` format is `"{idportador} - {nomeportador}"` (max 50 chars). For new portadores (INSERT), `oldValor = 0` — this fixes a Delphi bug where new portadores were silently ignored. For updates, `oldValor` is fetched inside the transaction before the write. The `GET /extrato/evolucao-portadores` endpoint uses `LIKE (idportador::text || ' - %')` to correlate extrato rows with portadores (no FK exists).
+
+**Date fields (`@db.Date`)**: PostgreSQL `date` columns are serialized as UTC midnight by Prisma, causing an off-by-one display when the client is in a UTC-negative timezone. Always render date-only fields with `{ timeZone: 'UTC' }`: `d.toLocaleDateString('pt-BR', { timeZone: 'UTC' })`.
+
 **CORS**: always declare `methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS']` explicitly — Fastify's default omits PATCH/DELETE/PUT.
 
 ### Tests
@@ -97,3 +101,33 @@ Tests live in `apps/api/src/__tests__/routes/`. Pattern: `jest.unstable_mockModu
 
 ### react-hook-form + Zod
 When a form has `select` inputs that depend on async data (members, creditors), the `reset()` call must wait for those queries to succeed — include `isSuccess` flags in the `useEffect` dependency array. Use `resolver: zodResolver(schema) as Resolver<FormData>` when the schema uses `z.coerce` fields to avoid TypeScript errors.
+
+### Recharts — full-row hover on horizontal BarChart
+To detect hover anywhere on a chart row (not just the bar shape itself), add `background={{ fill: 'transparent' }}` to the `<Bar>` component — this makes Recharts render a full-width invisible hit rectangle per row. Then handle hover on `<BarChart onMouseMove>` using `state.activeTooltipIndex` (guard with `typeof ... === 'number'` because the type is `number | string`). Do NOT use `isTooltipActive` as a guard — it is false in the empty row area.
+
+```tsx
+<BarChart
+  onMouseMove={(state) => {
+    const index = typeof state?.activeTooltipIndex === 'number'
+      ? state.activeTooltipIndex : null;
+    if (index !== null && index !== activeIndex) {
+      setActiveIndex(index);
+      onHoverChange?.(chartData[index]?.id ?? null);
+    }
+  }}
+  onMouseLeave={() => { setActiveIndex(null); onHoverChange?.(null); }}
+>
+  <Bar dataKey="saldo" background={{ fill: 'transparent' }}>
+    {/* Cell components for per-bar color */}
+  </Bar>
+</BarChart>
+```
+
+### Prisma raw queries with date literals
+When injecting validated date strings into `Prisma.sql`, use `Prisma.raw()` for the literal and validate the format first:
+```typescript
+const dateRe = /^\d{4}-\d{2}-\d{2}$/;
+if (!dateRe.test(dateStr)) return reply.code(400).send({ error: 'Invalid date format' });
+// then safely:
+Prisma.raw(`'${dateStr}'`)::date
+```

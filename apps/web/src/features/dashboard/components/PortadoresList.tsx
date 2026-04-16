@@ -9,6 +9,7 @@ const tipoLabel: Record<string, string> = {
 interface PortadoresListProps {
   portadores: PortadorResumo[];
   loading?: boolean;
+  highlightedId?: number | null;
 }
 
 interface GrupoMembro {
@@ -18,16 +19,22 @@ interface GrupoMembro {
   saldoGeral: number;
 }
 
-function PortadorCard({ p }: { p: PortadorResumo }) {
+function PortadorCard({ p, highlighted }: { p: PortadorResumo; highlighted: boolean }) {
   return (
     <div
       className={cn(
-        'flex items-center justify-between py-1.5 gap-2 border-b last:border-b-0',
+        'flex items-center justify-between py-1.5 gap-2 border-b last:border-b-0 rounded transition-colors duration-150',
         'border-slate-100 dark:border-slate-700/40',
+        highlighted && 'bg-blue-50 dark:bg-blue-900/20 -mx-2 px-2',
       )}
     >
       <div className="min-w-0 flex-1">
-        <p className="text-xs font-medium text-slate-700 dark:text-slate-200 truncate leading-tight">
+        <p className={cn(
+          'text-xs truncate leading-tight transition-colors duration-150',
+          highlighted
+            ? 'font-semibold text-blue-700 dark:text-blue-300'
+            : 'font-medium text-slate-700 dark:text-slate-200',
+        )}>
           {p.nome}
         </p>
         <p className="text-[11px] text-slate-400 dark:text-slate-500 leading-tight">
@@ -37,12 +44,14 @@ function PortadorCard({ p }: { p: PortadorResumo }) {
       </div>
       <span
         className={cn(
-          'text-xs font-semibold tabular-nums flex-shrink-0',
-          p.reservado
-            ? 'text-amber-600 dark:text-amber-400'
-            : p.contaCapital
-              ? 'text-purple-600 dark:text-purple-400'
-              : 'text-slate-800 dark:text-slate-200',
+          'text-xs font-semibold tabular-nums shrink-0 transition-colors duration-150',
+          highlighted
+            ? 'text-blue-700 dark:text-blue-300'
+            : p.reservado
+              ? 'text-amber-600 dark:text-amber-400'
+              : p.contaCapital
+                ? 'text-purple-600 dark:text-purple-400'
+                : 'text-slate-800 dark:text-slate-200',
         )}
       >
         {formatCurrency(p.saldo)}
@@ -51,11 +60,17 @@ function PortadorCard({ p }: { p: PortadorResumo }) {
   );
 }
 
-function GrupoCard({ grupo }: { grupo: GrupoMembro }) {
+function GrupoCard({ grupo, highlightedId }: { grupo: GrupoMembro; highlightedId: number | null }) {
   const visíveis = grupo.portadores.filter((p) => p.saldo > 0 || p.contaCapital);
+  const hasHighlight = visíveis.some((p) => p.id === highlightedId);
 
   return (
-    <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-4 flex flex-col gap-2">
+    <div className={cn(
+      'bg-white dark:bg-slate-800 rounded-xl border p-4 flex flex-col gap-2 transition-shadow duration-150',
+      hasHighlight
+        ? 'border-blue-300 dark:border-blue-600 shadow-md'
+        : 'border-slate-200 dark:border-slate-700',
+    )}>
       <div className="flex items-baseline justify-between pb-2 border-b border-slate-100 dark:border-slate-700">
         <h4 className="text-sm font-semibold text-slate-700 dark:text-slate-200">
           {grupo.membroNome.trim()}
@@ -66,7 +81,7 @@ function GrupoCard({ grupo }: { grupo: GrupoMembro }) {
       </div>
       <div>
         {visíveis.map((p) => (
-          <PortadorCard key={p.id} p={p} />
+          <PortadorCard key={p.id} p={p} highlighted={p.id === highlightedId} />
         ))}
         {visíveis.length === 0 && (
           <p className="text-xs text-slate-400 dark:text-slate-500 py-1">Sem saldo</p>
@@ -76,7 +91,7 @@ function GrupoCard({ grupo }: { grupo: GrupoMembro }) {
   );
 }
 
-export function PortadoresList({ portadores, loading }: PortadoresListProps) {
+export function PortadoresList({ portadores, loading, highlightedId = null }: PortadoresListProps) {
   if (loading) {
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -94,7 +109,6 @@ export function PortadoresList({ portadores, loading }: PortadoresListProps) {
     );
   }
 
-  // Agrupa por membro
   const grupos = portadores.reduce<GrupoMembro[]>((acc, p) => {
     let grupo = acc.find((g) => g.membroId === p.membroId);
     if (!grupo) {
@@ -102,7 +116,6 @@ export function PortadoresList({ portadores, loading }: PortadoresListProps) {
       acc.push(grupo);
     }
     grupo.portadores.push(p);
-    // saldoGeral = apenas portadores não-reservados e não-capital (= saldo bancário do membro)
     if (!p.reservado && !p.contaCapital) {
       grupo.saldoGeral += p.saldo;
     }
@@ -116,7 +129,7 @@ export function PortadoresList({ portadores, loading }: PortadoresListProps) {
       </h3>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {grupos.map((g) => (
-          <GrupoCard key={g.membroId} grupo={g} />
+          <GrupoCard key={g.membroId} grupo={g} highlightedId={highlightedId} />
         ))}
       </div>
     </div>

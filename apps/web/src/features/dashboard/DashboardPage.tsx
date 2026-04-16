@@ -1,12 +1,15 @@
+import { useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useDashboard } from './api';
 import { ResumoFinanceiro } from './components/ResumoFinanceiro';
 import { PortadoresList } from './components/PortadoresList';
 import { EvolucaoSaldo } from './components/EvolucaoSaldo';
+import { PortadoresChart } from './components/PortadoresChart';
 
 export function DashboardPage() {
   const { user } = useAuth();
   const { data, isLoading, isError } = useDashboard();
+  const [hoveredPortadorId, setHoveredPortadorId] = useState<number | null>(null);
 
   const primeiroNome =
     user?.displayName?.split(' ')[0] ?? user?.email?.split('@')[0] ?? 'usuário';
@@ -32,11 +35,22 @@ export function DashboardPage() {
       {/* Resumo financeiro (largura total) */}
       <ResumoFinanceiro data={data} loading={isLoading} />
 
-      {/* Gráfico de evolução */}
+      {/* Gráfico de evolução mensal */}
       <EvolucaoSaldo data={data?.evolucaoSaldo ?? []} saldoAtual={data?.saldoTotal} loading={isLoading} />
 
-      {/* Portadores agrupados por membro — abaixo do gráfico */}
-      <PortadoresList portadores={data?.portadores ?? []} loading={isLoading} />
+      {/* Gráfico de saldo atual por portador */}
+      <PortadoresChart
+        portadores={data?.portadores ?? []}
+        loading={isLoading}
+        onHoverChange={setHoveredPortadorId}
+      />
+
+      {/* Portadores agrupados por membro */}
+      <PortadoresList
+        portadores={data?.portadores ?? []}
+        loading={isLoading}
+        highlightedId={hoveredPortadorId}
+      />
     </div>
   );
 }

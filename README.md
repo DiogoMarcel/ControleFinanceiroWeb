@@ -9,10 +9,10 @@ Aplicação web de controle financeiro familiar — migração de um sistema leg
 ## O que o sistema faz
 
 ### Dashboard
-Visão consolidada das finanças em tempo real: saldo total de todos os portadores, total a pagar e receber no mês, saldo líquido projetado, gráfico de evolução histórica de saldo e distribuição de gastos por categoria.
+Visão consolidada das finanças em tempo real: saldo total de todos os portadores, total a pagar e receber no mês, saldo líquido projetado, gráfico de evolução histórica de saldo e gráfico de saldo atual por portador com hover sincronizado — ao passar o mouse sobre uma barra do gráfico, o portador correspondente é destacado na lista abaixo.
 
 ### Portadores (Contas e Carteiras)
-Gestão completa de contas bancárias, dinheiro em espécie, investimentos e poupanças. Cada portador exibe saldo atual, histórico com gráfico de evolução e permite registrar novos lançamentos e transferências entre portadores.
+Gestão completa de contas bancárias, dinheiro em espécie, investimentos e poupanças. Cada portador exibe saldo atual, histórico com gráfico de evolução e permite registrar novos lançamentos e transferências entre portadores. Toda criação ou atualização de saldo registra automaticamente um lançamento no extrato global.
 
 ### Contas a Pagar e Receber
 Lista de compromissos financeiros fixos mensais, separados em **A Pagar** e **A Receber**, agrupados por membro da família. Inclui marcação de pagamento compartilhada entre dispositivos (qualquer pessoa da família que marcar, todos veem), totais em tempo real e botão de reinício mensal.
@@ -23,6 +23,8 @@ Cada conta suporta: credor, membro da família, dia de vencimento, flags (débit
 
 ### Extrato
 Histórico cronológico de todas as movimentações, com filtros por período e tipo. Saldo acumulado exibido após cada lançamento.
+
+Inclui aba **Evolução por Portador**: selecione um período e veja, para cada portador, o saldo inicial, saldo final e variação líquida. Gráfico de barras horizontais com portadores que tiveram movimentação, e tabela ordenada da maior variação positiva à menor negativa (zeros por último).
 
 ### Cartões de Crédito
 Controle de cartões por membro da família, com bandeira, dia de vencimento e lista de despesas mensais.
