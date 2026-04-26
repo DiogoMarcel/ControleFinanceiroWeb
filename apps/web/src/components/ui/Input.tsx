@@ -10,9 +10,9 @@ interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
 export const Input = forwardRef<HTMLInputElement, InputProps>(
   ({ className, label, error, rightElement, id, ...props }, ref) => {
     return (
-      <div className="flex flex-col gap-1">
+      <div className="flex flex-col gap-1.5">
         {label && (
-          <label htmlFor={id} className="text-sm font-medium text-slate-700 dark:text-slate-300">
+          <label htmlFor={id} className="text-[13px] font-medium text-ink-muted">
             {label}
           </label>
         )}
@@ -21,13 +21,11 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
             ref={ref}
             id={id}
             className={cn(
-              'w-full h-10 px-3 text-sm rounded-lg border bg-white dark:bg-slate-800',
-              'border-slate-300 dark:border-slate-600',
-              'text-slate-900 dark:text-slate-100',
-              'placeholder:text-slate-400',
-              'focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent',
+              'w-full h-9 px-3 text-[13px] rounded-lg border bg-surface-raised',
+              'border-canvas-border text-ink placeholder:text-ink-subtle',
+              'focus:outline-none focus:ring-2 focus:ring-accent/25 focus:border-accent/60',
               'disabled:opacity-50 disabled:cursor-not-allowed',
-              error && 'border-red-500 focus:ring-red-500',
+              error && 'border-ledger-danger/60 focus:ring-ledger-danger/25 focus:border-ledger-danger/70',
               rightElement && 'pr-10',
               className,
             )}
@@ -39,7 +37,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
             </div>
           )}
         </div>
-        {error && <p className="text-xs text-red-600 dark:text-red-400">{error}</p>}
+        {error && <p className="text-xs text-ledger-danger">{error}</p>}
       </div>
     );
   },

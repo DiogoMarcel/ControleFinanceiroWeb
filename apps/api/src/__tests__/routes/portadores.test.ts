@@ -19,7 +19,7 @@ jest.unstable_mockModule('../../services/dashboard.service.js', () => ({ getDash
 jest.unstable_mockModule('../../services/contas.service.js', () => ({
   listContas: jest.fn(), getConta: jest.fn(), createConta: jest.fn(), updateConta: jest.fn(),
   deleteConta: jest.fn(), addTagConta: jest.fn(), removeTagConta: jest.fn(),
-  toggleMarcado: jest.fn(), reiniciarMarcadas: jest.fn(),
+  toggleMarcado: jest.fn(), reiniciarMarcadas: jest.fn(), relatorioContasPagar: jest.fn(),
 }));
 jest.unstable_mockModule('../../services/pagamentos.service.js', () => ({
   listPagamentos: jest.fn(), baixarPagamento: jest.fn(), desfazerBaixa: jest.fn(), gerarMes: jest.fn(),

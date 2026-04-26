@@ -19,38 +19,37 @@ export function Header({ onMenuClick }: HeaderProps) {
     : user?.email?.[0].toUpperCase() ?? '?';
 
   return (
-    <header className="h-16 bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 flex items-center px-4 gap-4 sticky top-0 z-30">
-      {/* Mobile menu button */}
+    <header className="h-14 bg-surface-raised border-b border-canvas-border flex items-center px-4 lg:px-6 gap-4 sticky top-0 z-30">
       <button
         onClick={onMenuClick}
-        className="lg:hidden text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
+        className="lg:hidden text-ink-muted hover:text-ink transition-colors"
+        aria-label="Abrir menu"
       >
-        <Menu className="w-6 h-6" />
+        <Menu className="w-5 h-5" />
       </button>
 
       <div className="flex-1" />
 
-      {/* User info + logout */}
       <div className="flex items-center gap-3">
         <div className="hidden sm:flex flex-col items-end">
-          <span className="text-sm font-medium text-slate-900 dark:text-white leading-none">
+          <span className="text-[13px] font-medium text-ink leading-none">
             {user?.displayName ?? user?.email}
           </span>
-          <span className="text-xs text-slate-500 dark:text-slate-400 capitalize mt-0.5">
+          <span className="text-[11px] text-ink-muted capitalize mt-0.5">
             {user?.role === 'admin' ? 'Administrador' : 'Visualizador'}
           </span>
         </div>
 
-        <div className="w-8 h-8 bg-blue-700 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
+        <div className="w-8 h-8 bg-accent rounded-full flex items-center justify-center text-white text-[11px] font-bold flex-shrink-0">
           {initials}
         </div>
 
         <button
           onClick={handleLogout}
-          title="Sair"
-          className="text-slate-400 hover:text-red-600 dark:hover:text-red-400 transition-colors"
+          aria-label="Sair"
+          className="text-ink-subtle hover:text-ledger-danger transition-colors"
         >
-          <LogOut className="w-5 h-5" />
+          <LogOut className="w-4 h-4" />
         </button>
       </div>
     </header>

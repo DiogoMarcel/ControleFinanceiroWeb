@@ -1,7 +1,7 @@
 import { NavLink } from 'react-router-dom';
 import {
   LayoutDashboard, Receipt, Wallet, CreditCard, BarChart2,
-  Car, Building2, Briefcase, Settings, TrendingUp, X, FileText,
+  Car, Building2, Briefcase, Settings, FileText, X,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -27,30 +27,33 @@ export function Sidebar({ mobile, onClose }: SidebarProps) {
   return (
     <aside
       className={cn(
-        'flex flex-col w-64 bg-white dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700',
+        'flex flex-col w-64 flex-shrink-0 bg-surface-raised border-r border-canvas-border',
         !mobile && 'hidden lg:flex sticky top-0 h-screen',
         mobile && 'flex h-full',
       )}
     >
       {/* Logo */}
-      <div className="flex items-center gap-3 px-4 h-16 border-b border-slate-200 dark:border-slate-700">
-        <div className="w-8 h-8 bg-blue-700 rounded-lg flex items-center justify-center flex-shrink-0">
-          <TrendingUp className="w-5 h-5 text-white" />
+      <div className="flex items-center px-5 h-14 border-b border-canvas-border">
+        <div className="flex flex-col leading-none">
+          <span className="text-[10px] font-semibold tracking-[0.18em] uppercase text-accent">
+            Controle
+          </span>
+          <span className="text-[15px] font-semibold text-ink mt-0.5 tracking-tight">
+            Financeiro
+          </span>
         </div>
-        <span className="font-semibold text-slate-900 dark:text-white text-sm leading-tight">
-          Controle<br />Financeiro
-        </span>
         {mobile && (
           <button
             onClick={onClose}
-            className="ml-auto text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
+            className="ml-auto text-ink-subtle hover:text-ink transition-colors"
+            aria-label="Fechar menu"
           >
             <X className="w-5 h-5" />
           </button>
         )}
       </div>
 
-      {/* Nav items */}
+      {/* Nav */}
       <nav className="flex-1 px-3 py-4 overflow-y-auto">
         <ul className="flex flex-col gap-0.5">
           {navItems.map(({ to, icon: Icon, label }) => (
@@ -60,14 +63,14 @@ export function Sidebar({ mobile, onClose }: SidebarProps) {
                 onClick={onClose}
                 className={({ isActive }) =>
                   cn(
-                    'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors',
+                    'flex items-center gap-3 px-3 py-2 rounded-md text-[13px] font-medium transition-all duration-150',
                     isActive
-                      ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400'
-                      : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-slate-200',
+                      ? 'bg-accent/10 text-accent'
+                      : 'text-ink-muted hover:text-ink hover:bg-surface',
                   )
                 }
               >
-                <Icon className="w-4 h-4 flex-shrink-0" />
+                <Icon className="w-[15px] h-[15px] flex-shrink-0" />
                 {label}
               </NavLink>
             </li>

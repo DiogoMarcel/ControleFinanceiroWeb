@@ -1,5 +1,15 @@
 import { prisma } from '../lib/prisma.js';
 
+export interface ContaVencendo {
+  id: number;
+  descricao: string;
+  valor: number;
+  diavencimento: number;
+  diasAteVencimento: number; // negative = overdue, 0 = today, positive = upcoming
+  credorNome: string | null;
+  membroNome: string | null;
+}
+
 export interface DashboardData {
   // Resumo financeiro
   saldoTotal: number;
@@ -14,6 +24,8 @@ export interface DashboardData {
   portadores: PortadorResumo[];
   // Gráfico: evolução do saldo total histórico
   evolucaoSaldo: EvolucaoMes[];
+  // Alertas: contas vencidas ou vencendo nos próximos 7 dias
+  contasVencendo: ContaVencendo[];
 }
 
 export interface PortadorResumo {
@@ -38,7 +50,18 @@ interface EvolucaoRow {
 }
 
 export async function getDashboardData(): Promise<DashboardData> {
-  const [portadores, contas, fgts, evolucao, ultimoDetalhado] = await Promise.all([
+  const hojeBase = new Date();
+  hojeBase.setHours(0, 0, 0, 0);
+  const diaHoje = hojeBase.getDate();
+
+  // Window of the next 7 days (including today), computing the calendar day for each
+  const janelaFutura = Array.from({ length: 8 }, (_, i) => {
+    const d = new Date(hojeBase);
+    d.setDate(diaHoje + i);
+    return { data: d, dia: d.getDate() };
+  });
+
+  const [portadores, contas, fgts, evolucao, ultimoDetalhado, contasAlerta] = await Promise.all([
     // Portadores com saldo e membro
     prisma.portador.findMany({
       include: { saldoportador: true, membrofamilia: true },
@@ -81,6 +104,24 @@ export async function getDashboardData(): Promise<DashboardData> {
       orderBy: { idsaldodetalhadoportador: 'desc' },
       select: { saldototal: true },
     }),
+
+    // Contas a pagar não marcadas com diavencimento definido (para alertas)
+    prisma.conta.findMany({
+      where: {
+        tipoconta: 'P',
+        marcado: false,
+        OR: [{ debitacartao: false }, { debitacartao: null }],
+        diavencimento: { not: null },
+      },
+      select: {
+        idconta: true,
+        descricao: true,
+        valor: true,
+        diavencimento: true,
+        credor: { select: { nome: true } },
+        membrofamilia: { select: { nome: true } },
+      },
+    }),
   ]);
 
   // Todos os saldos não-nulos
@@ -110,6 +151,36 @@ export async function getDashboardData(): Promise<DashboardData> {
     .filter((s) => s.reservado !== true)
     .reduce((sum, s) => sum + (s.valor ?? 0), 0);
 
+  const contasVencendo: ContaVencendo[] = contasAlerta
+    .flatMap((c) => {
+      const dia = c.diavencimento!;
+      const upcoming = janelaFutura.find((j) => j.dia === dia);
+      if (upcoming) {
+        return [{
+          id: c.idconta,
+          descricao: c.descricao,
+          valor: c.valor,
+          diavencimento: dia,
+          diasAteVencimento: Math.round((upcoming.data.getTime() - hojeBase.getTime()) / 86400000),
+          credorNome: c.credor?.nome ?? null,
+          membroNome: c.membrofamilia?.nome ?? null,
+        }];
+      }
+      if (dia < diaHoje) {
+        return [{
+          id: c.idconta,
+          descricao: c.descricao,
+          valor: c.valor,
+          diavencimento: dia,
+          diasAteVencimento: dia - diaHoje,
+          credorNome: c.credor?.nome ?? null,
+          membroNome: c.membrofamilia?.nome ?? null,
+        }];
+      }
+      return [];
+    })
+    .sort((a, b) => a.diasAteVencimento - b.diasAteVencimento);
+
   const totalPagar = contas.find((c) => c.tipoconta === 'P')?._sum.valor ?? 0;
   const totalReceber = contas.find((c) => c.tipoconta === 'R')?._sum.valor ?? 0;
   const saldoFgts = fgts._sum.saldo ?? 0;
@@ -137,5 +208,6 @@ export async function getDashboardData(): Promise<DashboardData> {
       mes: r.mes,
       saldoTotal: Number(r.saldototal),
     })),
+    contasVencendo,
   };
 }

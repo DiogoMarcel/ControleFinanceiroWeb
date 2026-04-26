@@ -3,7 +3,7 @@ title Controle Financeiro Web
 cd /d "%~dp0"
 
 :: Detectar IP local via PowerShell (exclui loopback e link-local)
-for /f %%a in ('powershell -NoProfile -Command "(Get-NetIPAddress -AddressFamily IPv4 | Where-Object { $_.IPAddress -notlike '127.*' -and $_.IPAddress -notlike '169.*' } | Sort-Object InterfaceIndex | Select-Object -First 1 -ExpandProperty IPAddress)"') do set LOCAL_IP=%%a
+for /f %%a in ('powershell -NoProfile -Command "$a = Get-NetIPAddress -AddressFamily IPv4 | Where-Object { $_.IPAddress -notlike '127.*' -and $_.IPAddress -notlike '169.*' -and $_.PrefixOrigin -eq 'Dhcp' }; $wifi = $a | Where-Object { (Get-NetAdapter -InterfaceIndex $_.InterfaceIndex).PhysicalMediaType -like '*802.11*' }; if ($wifi) { $wifi | Select-Object -First 1 -ExpandProperty IPAddress } else { $a | Sort-Object InterfaceIndex | Select-Object -First 1 -ExpandProperty IPAddress }"') do set LOCAL_IP=%%a
 
 :: Gravar .env.local com o IP atual (tem prioridade sobre .env no Vite)
 echo VITE_API_URL=http://%LOCAL_IP%:3001/api/v1> apps\web\.env.local

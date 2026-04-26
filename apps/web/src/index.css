@@ -1,33 +1,8 @@
 @import "tailwindcss";
-
-@layer base {
-  body {
-    font-family: 'Inter', sans-serif;
-  }
-}
-
-@media print {
-  /* Oculta a sidebar, topbar e bottom nav */
-  nav, aside, header, [data-sidebar], [data-topbar], [data-bottomnav] {
-    display: none !important;
-  }
-  /* Fundo branco, sem sombras */
-  body, #root {
-    background: white !important;
-  }
-  /* Garante que o conteúdo ocupe a página inteira */
-  main, .print\:p-0 {
-    padding: 0 !important;
-    margin: 0 !important;
-    max-width: 100% !important;
-  }
-  /* Evita quebra de página dentro de grupos */
-  table, tr {
-    break-inside: avoid;
-  }
-}
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600&display=swap');
 
 @theme {
+  /* Legacy blue utilities — kept for backward compat */
   --color-primary-50: #eff6ff;
   --color-primary-100: #dbeafe;
   --color-primary-200: #bfdbfe;
@@ -39,4 +14,51 @@
   --color-primary-800: #1e40af;
   --color-primary-900: #1e3a8a;
   --color-primary-950: #172554;
+
+  /* Ledger design system */
+  --color-surface: oklch(97.5% 0.008 75);
+  --color-surface-raised: oklch(99.5% 0.005 75);
+  --color-canvas-border: oklch(90% 0.012 75);
+
+  --color-sidebar: oklch(17% 0.03 255);
+  --color-sidebar-hover: oklch(23% 0.03 255);
+  --color-sidebar-active: oklch(26% 0.04 255);
+
+  --color-accent: oklch(68% 0.15 65);
+
+  --color-ink: oklch(14% 0.02 255);
+  --color-ink-muted: oklch(52% 0.015 255);
+  --color-ink-subtle: oklch(72% 0.01 255);
+
+  --color-ledger-success: oklch(50% 0.13 152);
+  --color-ledger-danger: oklch(53% 0.17 25);
+  --color-ledger-warning: oklch(66% 0.14 62);
+
+  --font-sans: 'DM Sans', system-ui, -apple-system, sans-serif;
+  --font-display: 'Fraunces', Georgia, 'Times New Roman', serif;
+}
+
+@layer base {
+  body {
+    font-family: var(--font-sans);
+    color: oklch(14% 0.02 255);
+    -webkit-font-smoothing: antialiased;
+  }
+}
+
+@media print {
+  nav, aside, header, [data-sidebar], [data-topbar], [data-bottomnav] {
+    display: none !important;
+  }
+  body, #root {
+    background: white !important;
+  }
+  main, .print\:p-0 {
+    padding: 0 !important;
+    margin: 0 !important;
+    max-width: 100% !important;
+  }
+  table, tr {
+    break-inside: avoid;
+  }
 }

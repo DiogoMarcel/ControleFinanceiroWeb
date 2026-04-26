@@ -21,7 +21,7 @@ jest.unstable_mockModule('../../services/portadores.service.js', () => ({
 jest.unstable_mockModule('../../services/contas.service.js', () => ({
   listContas: jest.fn(), getConta: jest.fn(), createConta: jest.fn(), updateConta: jest.fn(),
   deleteConta: jest.fn(), addTagConta: jest.fn(), removeTagConta: jest.fn(),
-  toggleMarcado: jest.fn(), reiniciarMarcadas: jest.fn(),
+  toggleMarcado: jest.fn(), reiniciarMarcadas: jest.fn(), relatorioContasPagar: jest.fn(),
 }));
 jest.unstable_mockModule('../../services/pagamentos.service.js', () => ({
   listPagamentos: jest.fn(), baixarPagamento: jest.fn(), desfazerBaixa: jest.fn(), gerarMes: jest.fn(),
@@ -67,6 +67,9 @@ const MOCK_DASHBOARD = {
     { mes: '2026-03', saldoTotal: 101200.0 },
     { mes: '2026-04', saldoTotal: 103832.51 },
   ],
+  contasVencendo: [
+    { id: 1, descricao: 'Internet', valor: 120.0, diavencimento: 5, diasAteVencimento: -3, credorNome: 'Claro', membroNome: null },
+  ],
 };
 
 describe('GET /api/v1/dashboard', () => {
@@ -103,6 +106,7 @@ describe('GET /api/v1/dashboard', () => {
     expect(body.saldoTotal).toBe(103832.51);
     expect(body.portadores).toHaveLength(1);
     expect(body.evolucaoSaldo).toHaveLength(2);
+    expect(body.contasVencendo).toHaveLength(1);
     expect(mockGetDashboardData).toHaveBeenCalledTimes(1);
   });
 

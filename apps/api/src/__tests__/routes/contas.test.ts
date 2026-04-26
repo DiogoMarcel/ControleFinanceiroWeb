@@ -21,6 +21,7 @@ jest.unstable_mockModule('../../services/contas.service.js', () => ({
   removeTagConta: mockRemoveTagConta,
   toggleMarcado: mockToggleMarcado,
   reiniciarMarcadas: mockReiniciarMarcadas,
+  relatorioContasPagar: jest.fn(),
 }));
 
 jest.unstable_mockModule('../../services/dashboard.service.js', () => ({ getDashboardData: jest.fn() }));

@@ -13,25 +13,25 @@ interface PortadoresChartProps {
 }
 
 const COLOR_MAP: Record<string, string> = {
-  C: '#60a5fa', // Corrente — azul
-  P: '#34d399', // Poupança — verde
-  I: '#a78bfa', // Investimento — roxo
-  D: '#fbbf24', // Dinheiro — âmbar
+  C: 'oklch(67% 0.17 230)',
+  P: 'oklch(68% 0.15 160)',
+  I: 'oklch(65% 0.18 295)',
+  D: 'oklch(72% 0.16 75)',
+};
+
+const COLOR_ACTIVE: Record<string, string> = {
+  C: 'oklch(50% 0.20 230)',
+  P: 'oklch(50% 0.18 160)',
+  I: 'oklch(48% 0.22 295)',
+  D: 'oklch(57% 0.18 75)',
 };
 
 function getColor(tipo: string) {
-  return COLOR_MAP[tipo] ?? '#94a3b8';
+  return COLOR_MAP[tipo] ?? 'oklch(74% 0.04 255)';
 }
 
-// Escurece levemente a cor ao fazer hover
-function getDarkerColor(tipo: string) {
-  const map: Record<string, string> = {
-    C: '#2563eb',
-    P: '#059669',
-    I: '#7c3aed',
-    D: '#d97706',
-  };
-  return map[tipo] ?? '#475569';
+function getActiveColor(tipo: string) {
+  return COLOR_ACTIVE[tipo] ?? 'oklch(52% 0.015 255)';
 }
 
 export function PortadoresChart({ portadores, loading, onHoverChange }: PortadoresChartProps) {
@@ -39,9 +39,9 @@ export function PortadoresChart({ portadores, loading, onHoverChange }: Portador
 
   if (loading) {
     return (
-      <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-4">
-        <div className="h-5 w-48 bg-slate-200 dark:bg-slate-700 rounded mb-4 animate-pulse" />
-        <div className="h-64 bg-slate-100 dark:bg-slate-700/50 rounded-lg animate-pulse" />
+      <div className="bg-surface-raised rounded-xl border border-canvas-border p-5">
+        <div className="h-4 w-48 bg-canvas-border rounded mb-4 animate-pulse" />
+        <div className="h-64 bg-canvas-border/50 rounded-lg animate-pulse" />
       </div>
     );
   }
@@ -62,20 +62,17 @@ export function PortadoresChart({ portadores, loading, onHoverChange }: Portador
   if (chartData.length === 0) return null;
 
   return (
-    <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-4">
-      <div className="flex items-baseline justify-between mb-1">
-        <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300">
-          Saldo Atual por Portador
+    <div className="bg-surface-raised rounded-xl border border-canvas-border p-5">
+      <div className="flex items-baseline justify-between mb-4">
+        <h3 className="text-[13px] font-semibold text-ink-muted uppercase tracking-[0.07em]">
+          Saldo por Portador
         </h3>
-        <div className="flex items-center gap-3 text-xs text-slate-400 dark:text-slate-500">
+        <div className="flex items-center gap-3">
           {Object.entries({ C: 'Corrente', P: 'Poupança', I: 'Investimento', D: 'Dinheiro' }).map(
             ([k, v]) =>
               portadores.some((p) => p.tipo === k && p.saldo > 0) ? (
-                <span key={k} className="flex items-center gap-1">
-                  <span
-                    className="inline-block w-2.5 h-2.5 rounded-sm"
-                    style={{ background: COLOR_MAP[k] }}
-                  />
+                <span key={k} className="flex items-center gap-1 text-[11px] text-ink-muted">
+                  <span className="inline-block w-2 h-2 rounded-sm" style={{ background: COLOR_MAP[k] }} />
                   {v}
                 </span>
               ) : null,
@@ -99,10 +96,10 @@ export function PortadoresChart({ portadores, loading, onHoverChange }: Portador
           }}
           onMouseLeave={() => { setActiveIndex(null); onHoverChange?.(null); }}
         >
-          <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#e2e8f0" />
+          <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="oklch(90% 0.012 75)" />
           <XAxis
             type="number"
-            tick={{ fontSize: 11, fill: '#94a3b8' }}
+            tick={{ fontSize: 11, fill: 'oklch(65% 0.015 255)', fontFamily: 'var(--font-sans)' }}
             axisLine={false}
             tickLine={false}
             tickFormatter={(v) =>
@@ -121,7 +118,7 @@ export function PortadoresChart({ portadores, loading, onHoverChange }: Portador
                 textAnchor="end"
                 fontSize={11}
                 fontWeight={activeIndex === index ? 600 : 400}
-                fill={activeIndex === index ? '#1e293b' : '#64748b'}
+                fill={activeIndex === index ? 'oklch(14% 0.02 255)' : 'oklch(52% 0.015 255)'}
               >
                 {payload.value}
               </text>
@@ -130,7 +127,7 @@ export function PortadoresChart({ portadores, loading, onHoverChange }: Portador
             tickLine={false}
           />
           <Tooltip
-            cursor={{ fill: '#f1f5f9', radius: 4 }}
+            cursor={{ fill: 'oklch(95% 0.008 75)', radius: 4 }}
             formatter={(value) => [formatCurrency(Number(value)), 'Saldo']}
             labelFormatter={(_, payload) => {
               const p = payload?.[0]?.payload;
@@ -138,18 +135,18 @@ export function PortadoresChart({ portadores, loading, onHoverChange }: Portador
             }}
             contentStyle={{
               borderRadius: '8px',
-              border: '1px solid #e2e8f0',
+              border: '1px solid oklch(90% 0.012 75)',
               fontSize: '13px',
+              background: 'oklch(99.5% 0.005 75)',
+              color: 'oklch(14% 0.02 255)',
             }}
           />
           <Bar dataKey="saldo" radius={[0, 4, 4, 0]} background={{ fill: 'transparent' }}>
             {chartData.map((entry, i) => (
               <Cell
                 key={i}
-                fill={activeIndex === i ? getDarkerColor(entry.tipo) : getColor(entry.tipo)}
-                opacity={activeIndex === null || activeIndex === i ? 1 : 0.35}
-                stroke={activeIndex === i ? getDarkerColor(entry.tipo) : 'none'}
-                strokeWidth={activeIndex === i ? 1.5 : 0}
+                fill={activeIndex === i ? getActiveColor(entry.tipo) : getColor(entry.tipo)}
+                opacity={activeIndex === null || activeIndex === i ? 1 : 0.3}
               />
             ))}
           </Bar>

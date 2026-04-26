@@ -9,19 +9,21 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
 
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
   ({ className, variant = 'primary', size = 'md', loading, disabled, children, ...props }, ref) => {
-    const base = 'inline-flex items-center justify-center font-medium rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed';
+    const base =
+      'inline-flex items-center justify-center font-medium rounded-lg transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 disabled:opacity-50 disabled:cursor-not-allowed';
 
     const variants = {
-      primary: 'bg-blue-700 text-white hover:bg-blue-800 active:bg-blue-900',
-      secondary: 'bg-white text-slate-700 border border-slate-300 hover:bg-slate-50 active:bg-slate-100',
-      ghost: 'text-slate-600 hover:bg-slate-100 active:bg-slate-200',
-      danger: 'bg-red-600 text-white hover:bg-red-700 active:bg-red-800',
+      primary: 'bg-accent text-white hover:opacity-90 active:opacity-80',
+      secondary:
+        'bg-surface-raised text-ink border border-canvas-border hover:bg-surface active:bg-surface',
+      ghost: 'text-ink-muted hover:bg-surface hover:text-ink active:bg-canvas-border',
+      danger: 'bg-ledger-danger text-white hover:opacity-90 active:opacity-80',
     };
 
     const sizes = {
-      sm: 'h-8 px-3 text-sm gap-1.5',
-      md: 'h-10 px-4 text-sm gap-2',
-      lg: 'h-12 px-6 text-base gap-2',
+      sm: 'h-8 px-3 text-[13px] gap-1.5',
+      md: 'h-9 px-4 text-[13px] gap-2',
+      lg: 'h-11 px-6 text-sm gap-2',
     };
 
     return (

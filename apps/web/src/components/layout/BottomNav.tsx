@@ -12,7 +12,10 @@ const items = [
 
 export function BottomNav() {
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-30 bg-white dark:bg-slate-800 border-t border-slate-200 dark:border-slate-700 lg:hidden">
+    <nav
+      className="fixed bottom-0 left-0 right-0 z-30 bg-surface-raised border-t border-canvas-border lg:hidden"
+      data-bottomnav
+    >
       <ul className="flex">
         {items.map(({ to, icon: Icon, label }) => (
           <li key={to} className="flex-1">
@@ -20,10 +23,10 @@ export function BottomNav() {
               to={to}
               className={({ isActive }) =>
                 cn(
-                  'flex flex-col items-center justify-center py-2 gap-1 text-xs font-medium transition-colors',
+                  'flex flex-col items-center justify-center py-2.5 gap-1 text-[11px] font-medium transition-colors',
                   isActive
-                    ? 'text-blue-700 dark:text-blue-400'
-                    : 'text-slate-500 dark:text-slate-400',
+                    ? 'text-accent'
+                    : 'text-ink-subtle hover:text-ink',
                 )
               }
             >

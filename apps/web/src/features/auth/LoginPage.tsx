@@ -4,7 +4,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { signInWithEmailAndPassword, sendPasswordResetEmail } from 'firebase/auth';
-import { Eye, EyeOff, TrendingUp } from 'lucide-react';
+import { Eye, EyeOff } from 'lucide-react';
 import { auth } from '@/lib/firebase';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
@@ -73,19 +73,21 @@ export function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-900 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-surface flex items-center justify-center p-4">
       <div className="w-full max-w-sm">
         {/* Logo */}
         <div className="flex flex-col items-center mb-8">
-          <div className="w-14 h-14 bg-blue-700 rounded-2xl flex items-center justify-center mb-4 shadow-lg">
-            <TrendingUp className="w-8 h-8 text-white" />
+          <div className="mb-5 flex flex-col items-center leading-none">
+            <span className="font-display text-5xl font-semibold text-accent tracking-tight">CF</span>
           </div>
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Controle Financeiro</h1>
-          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Familiar</p>
+          <div className="text-center">
+            <h1 className="text-xl font-semibold text-ink tracking-tight">Controle Financeiro</h1>
+            <p className="text-[13px] text-ink-muted mt-1">Familiar</p>
+          </div>
         </div>
 
-        {/* Card */}
-        <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 p-6">
+        {/* Form */}
+        <div className="bg-surface-raised rounded-2xl border border-canvas-border shadow-sm p-6">
           <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
             <Input
               id="email"
@@ -108,8 +110,9 @@ export function LoginPage() {
                 <button
                   type="button"
                   onClick={() => setShowPassword((v) => !v)}
-                  className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
+                  className="text-ink-subtle hover:text-ink-muted transition-colors"
                   tabIndex={-1}
+                  aria-label={showPassword ? 'Ocultar senha' : 'Mostrar senha'}
                 >
                   {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
@@ -118,13 +121,13 @@ export function LoginPage() {
             />
 
             {authError && (
-              <p className="text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 px-3 py-2 rounded-lg">
+              <p className="text-[13px] text-ledger-danger bg-ledger-danger/8 px-3 py-2 rounded-lg">
                 {authError}
               </p>
             )}
 
             {resetSent && (
-              <p className="text-sm text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/20 px-3 py-2 rounded-lg">
+              <p className="text-[13px] text-ledger-success bg-ledger-success/8 px-3 py-2 rounded-lg">
                 E-mail de redefinição enviado. Verifique sua caixa de entrada.
               </p>
             )}
@@ -137,7 +140,7 @@ export function LoginPage() {
           <button
             type="button"
             onClick={handleForgotPassword}
-            className="w-full text-center text-sm text-blue-600 dark:text-blue-400 hover:underline mt-4"
+            className="w-full text-center text-[13px] text-ink-muted hover:text-accent transition-colors mt-4"
           >
             Esqueci minha senha
           </button>

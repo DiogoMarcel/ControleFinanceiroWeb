@@ -96,8 +96,12 @@ Turborepo orchestrates builds; npm workspaces handle dependencies. `@cfweb/share
 
 **CORS**: always declare `methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS']` explicitly — Fastify's default omits PATCH/DELETE/PUT.
 
+**`contasVencendo` (dashboard alertas)**: computed in `dashboard.service.ts` alongside the other queries. Builds an 8-entry window (`janelaFutura`) of the next 7 days using `new Date(); setDate(diaHoje + i)` — `getDate()` after `setDate` handles month-end overflow automatically. Contas with `diavencimento` in the window get `diasAteVencimento >= 0`; contas already past (`diavencimento < diaHoje`) get negative values. Sorted ascending so overdue appears first. Component `AlertasVencimento` returns `null` when the list is empty (no card rendered).
+
 ### Tests
 Tests live in `apps/api/src/__tests__/routes/`. Pattern: `jest.unstable_mockModule` to mock all service modules and `../../lib/prisma.js` before importing routes, then use `buildApp()` helper which creates a Fastify instance with all routes registered. Firebase auth middleware is mocked to accept `'Bearer test-token'` (`TEST_TOKEN`).
+
+**Important**: every mock of a service module must include ALL exported functions from that module, not just the ones the test exercises — `buildApp()` registers all routes, so every import in every route file must resolve from the mock.
 
 ### react-hook-form + Zod
 When a form has `select` inputs that depend on async data (members, creditors), the `reset()` call must wait for those queries to succeed — include `isSuccess` flags in the `useEffect` dependency array. Use `resolver: zodResolver(schema) as Resolver<FormData>` when the schema uses `z.coerce` fields to avoid TypeScript errors.
