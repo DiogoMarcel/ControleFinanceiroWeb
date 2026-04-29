@@ -65,13 +65,13 @@ function ChartCard({ title, controls, children, loading }: {
   loading?: boolean;
 }) {
   return (
-    <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-5">
+    <div className="bg-surface-raised rounded-xl border border-canvas-border p-5">
       <div className="flex items-center justify-between mb-4 gap-4 flex-wrap">
-        <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300">{title}</h3>
+        <h3 className="text-sm font-semibold text-ink">{title}</h3>
         {controls}
       </div>
       {loading ? (
-        <div className="h-64 bg-slate-100 dark:bg-slate-700/50 rounded-lg animate-pulse" />
+        <div className="h-64 bg-surface rounded-lg animate-pulse" />
       ) : (
         children
       )}
@@ -104,7 +104,7 @@ function SaldoPorPortador() {
       title="Saldo Atual por Portador"
       loading={isLoading}
       controls={
-        <label className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400 cursor-pointer select-none">
+        <label className="flex items-center gap-1.5 text-xs text-ink-muted cursor-pointer select-none">
           <input
             type="checkbox"
             checked={mostrarTodos}
@@ -116,15 +116,15 @@ function SaldoPorPortador() {
       }
     >
       {chartData.length === 0 ? (
-        <p className="h-64 flex items-center justify-center text-slate-400 text-sm">Sem dados.</p>
+        <p className="h-64 flex items-center justify-center text-ink-subtle text-sm">Sem dados.</p>
       ) : (
         <>
           <ResponsiveContainer width="100%" height={260}>
             <BarChart data={chartData} barCategoryGap="25%" margin={{ bottom: 30 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" vertical={false} />
+              <CartesianGrid strokeDasharray="3 3" stroke="oklch(90% 0.012 75)" vertical={false} />
               <XAxis
                 dataKey="nome"
-                tick={{ fontSize: 11, fill: '#94a3b8' }}
+                tick={{ fontSize: 11, fill: 'oklch(72% 0.01 255)' }}
                 axisLine={false}
                 tickLine={false}
                 angle={-30}
@@ -132,14 +132,14 @@ function SaldoPorPortador() {
                 interval={0}
               />
               <YAxis
-                tick={{ fontSize: 11, fill: '#94a3b8' }}
+                tick={{ fontSize: 11, fill: 'oklch(72% 0.01 255)' }}
                 axisLine={false}
                 tickLine={false}
                 tickFormatter={v => v >= 1000 ? `R$${(v / 1000).toFixed(0)}k` : `R$${v}`}
               />
               <Tooltip
                 formatter={(value) => [formatCurrency(Number(value)), 'Saldo']}
-                contentStyle={{ borderRadius: 8, border: '1px solid #e2e8f0', fontSize: 13 }}
+                contentStyle={{ borderRadius: 8, border: '1px solid oklch(90% 0.012 75)', fontSize: 13 }}
               />
               <Bar dataKey="valor" radius={[4, 4, 0, 0]}>
                 {chartData.map((entry, i) => (
@@ -148,13 +148,13 @@ function SaldoPorPortador() {
               </Bar>
             </BarChart>
           </ResponsiveContainer>
-          <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">
+          <p className="text-xs text-ink-subtle mt-1">
             Total operacional:{' '}
-            <span className="font-medium text-slate-600 dark:text-slate-300">
+            <span className="font-medium text-ink-muted">
               {formatCurrency(operacionais.reduce((s, p) => s + p.valor, 0))}
             </span>
             {reservados.length > 0 && !mostrarTodos && (
-              <span className="ml-2 text-slate-400">
+              <span className="ml-2 text-ink-subtle">
                 (+{reservados.length} reservado{reservados.length > 1 ? 's' : ''} oculto{reservados.length > 1 ? 's' : ''})
               </span>
             )}
@@ -186,12 +186,12 @@ function GastosPorTag() {
           type="month"
           value={mes}
           onChange={e => setMes(e.target.value)}
-          className="border border-slate-300 dark:border-slate-600 rounded-lg px-2 py-1 text-xs bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="border border-canvas-border rounded-lg px-2 py-1 text-xs bg-surface-raised text-ink focus:outline-none focus:ring-2 focus:ring-accent/25 focus:border-accent/60"
         />
       }
     >
       {data.length === 0 ? (
-        <p className="h-64 flex items-center justify-center text-slate-400 text-sm">Sem gastos categorizados no período.</p>
+        <p className="h-64 flex items-center justify-center text-ink-subtle text-sm">Sem gastos categorizados no período.</p>
       ) : (
         <div className="flex flex-col md:flex-row items-center gap-4">
           <ResponsiveContainer width="100%" height={240}>
@@ -212,7 +212,7 @@ function GastosPorTag() {
               </Pie>
               <Tooltip
                 formatter={(value, name) => [formatCurrency(Number(value)), name]}
-                contentStyle={{ borderRadius: 8, border: '1px solid #e2e8f0', fontSize: 13 }}
+                contentStyle={{ borderRadius: 8, border: '1px solid oklch(90% 0.012 75)', fontSize: 13 }}
               />
             </PieChart>
           </ResponsiveContainer>
@@ -223,14 +223,14 @@ function GastosPorTag() {
                   className="w-2.5 h-2.5 rounded-full flex-shrink-0"
                   style={{ backgroundColor: PALETTE[i % PALETTE.length] }}
                 />
-                <span className="text-slate-600 dark:text-slate-300 flex-1 truncate">{d.descricao}</span>
-                <span className="font-medium text-slate-700 dark:text-slate-200 whitespace-nowrap">
+                <span className="text-ink-muted flex-1 truncate">{d.descricao}</span>
+                <span className="font-medium text-ink whitespace-nowrap">
                   {((d.total / total) * 100).toFixed(0)}%
                 </span>
               </div>
             ))}
-            <p className="mt-2 pt-2 border-t border-slate-100 dark:border-slate-700 text-xs text-slate-500 dark:text-slate-400">
-              Total: <span className="font-semibold text-slate-700 dark:text-slate-200">{formatCurrency(total)}</span>
+            <p className="mt-2 pt-2 border-t border-canvas-border text-xs text-ink-muted">
+              Total: <span className="font-semibold text-ink">{formatCurrency(total)}</span>
             </p>
           </div>
         </div>
@@ -263,7 +263,7 @@ function ComparativoMeses() {
         <select
           value={meses}
           onChange={e => setMeses(Number(e.target.value))}
-          className="border border-slate-300 dark:border-slate-600 rounded-lg px-2 py-1 text-xs bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="border border-canvas-border rounded-lg px-2 py-1 text-xs bg-surface-raised text-ink focus:outline-none focus:ring-2 focus:ring-accent/25 focus:border-accent/60"
         >
           <option value={3}>3 meses</option>
           <option value={6}>6 meses</option>
@@ -273,20 +273,20 @@ function ComparativoMeses() {
       }
     >
       {chartData.length === 0 ? (
-        <p className="h-64 flex items-center justify-center text-slate-400 text-sm">Sem dados no período.</p>
+        <p className="h-64 flex items-center justify-center text-ink-subtle text-sm">Sem dados no período.</p>
       ) : (
         <>
           <ResponsiveContainer width="100%" height={260}>
             <BarChart data={chartData} barCategoryGap="20%" barGap={4}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" vertical={false} />
+              <CartesianGrid strokeDasharray="3 3" stroke="oklch(90% 0.012 75)" vertical={false} />
               <XAxis
                 dataKey="mesLabel"
-                tick={{ fontSize: 11, fill: '#94a3b8' }}
+                tick={{ fontSize: 11, fill: 'oklch(72% 0.01 255)' }}
                 axisLine={false}
                 tickLine={false}
               />
               <YAxis
-                tick={{ fontSize: 11, fill: '#94a3b8' }}
+                tick={{ fontSize: 11, fill: 'oklch(72% 0.01 255)' }}
                 axisLine={false}
                 tickLine={false}
                 tickFormatter={v => v >= 1000 ? `R$${(v / 1000).toFixed(0)}k` : `R$${v}`}
@@ -296,7 +296,7 @@ function ComparativoMeses() {
                   formatCurrency(Number(value)),
                   name === 'pagamentos' ? 'Pagamentos' : 'Recebimentos',
                 ]}
-                contentStyle={{ borderRadius: 8, border: '1px solid #e2e8f0', fontSize: 13 }}
+                contentStyle={{ borderRadius: 8, border: '1px solid oklch(90% 0.012 75)', fontSize: 13 }}
               />
               <Legend
                 formatter={v => v === 'pagamentos' ? 'Pagamentos' : 'Recebimentos'}
@@ -304,8 +304,8 @@ function ComparativoMeses() {
                 iconSize={8}
                 wrapperStyle={{ fontSize: 12 }}
               />
-              <Bar dataKey="recebimentos" fill="#10b981" radius={[3, 3, 0, 0]} />
-              <Bar dataKey="pagamentos" fill="#f87171" radius={[3, 3, 0, 0]} />
+              <Bar dataKey="recebimentos" fill="oklch(50% 0.13 152)" radius={[3, 3, 0, 0]} />
+              <Bar dataKey="pagamentos" fill="oklch(53% 0.17 25 / 0.7)" radius={[3, 3, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </>
@@ -320,8 +320,8 @@ export function RelatoriosPage() {
   return (
     <div className="max-w-6xl mx-auto px-4 py-6 space-y-6">
       <div className="flex items-center gap-3">
-        <BarChart2 className="w-6 h-6 text-blue-600" />
-        <h1 className="text-xl font-semibold text-slate-900 dark:text-white">Relatórios</h1>
+        <BarChart2 className="w-6 h-6 text-accent" />
+        <h1 className="text-xl font-semibold text-ink">Relatórios</h1>
       </div>
 
       <SaldoPorPortador />

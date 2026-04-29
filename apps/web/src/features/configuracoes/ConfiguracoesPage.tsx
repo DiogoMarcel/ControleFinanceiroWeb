@@ -79,12 +79,12 @@ function CrudSection({ title, items, isLoading, isAdmin, onCreate, onUpdate, onD
     }
   }
 
-  const inputClass = "flex-1 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 px-3 py-2 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500";
-  const btnIcon = "p-1.5 rounded-lg transition-colors";
+  const inputClass = 'flex-1 rounded-lg border border-canvas-border bg-surface-raised px-3 py-2 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-accent/25 focus:border-accent/60';
+  const btnIcon = 'p-1.5 rounded-lg transition-colors';
 
   return (
-    <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-5 flex flex-col gap-4">
-      <h2 className="text-base font-semibold text-slate-900 dark:text-white">{title}</h2>
+    <div className="bg-surface-raised rounded-xl border border-canvas-border p-5 flex flex-col gap-4">
+      <h2 className="text-base font-semibold text-ink">{title}</h2>
 
       {/* Campo nova entrada */}
       {isAdmin && (
@@ -99,7 +99,7 @@ function CrudSection({ title, items, isLoading, isAdmin, onCreate, onUpdate, onD
           <button
             onClick={handleCreate}
             disabled={salvando || !novoValor.trim()}
-            className="flex items-center gap-1.5 px-3 py-2 text-sm rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-medium transition-colors disabled:opacity-50 flex-shrink-0"
+            className="flex items-center gap-1.5 px-3 py-2 text-sm rounded-lg bg-accent hover:opacity-90 text-white font-medium transition-colors disabled:opacity-50 flex-shrink-0"
           >
             <Plus className="w-4 h-4" />
             <span className="hidden sm:inline">Adicionar</span>
@@ -109,22 +109,22 @@ function CrudSection({ title, items, isLoading, isAdmin, onCreate, onUpdate, onD
 
       {/* Erro */}
       {erro && (
-        <p className="text-xs text-red-500 bg-red-50 dark:bg-red-900/20 rounded-lg px-3 py-2">{erro}</p>
+        <p className="text-xs text-ledger-danger bg-ledger-danger/10 rounded-lg px-3 py-2">{erro}</p>
       )}
 
       {/* Lista */}
       {isLoading ? (
         <div className="space-y-2">
           {[0, 1, 2].map((i) => (
-            <div key={i} className="h-10 bg-slate-100 dark:bg-slate-700/50 rounded-lg animate-pulse" />
+            <div key={i} className="h-10 bg-surface rounded-lg animate-pulse" />
           ))}
         </div>
       ) : items.length === 0 ? (
-        <p className="text-sm text-slate-400 dark:text-slate-500 text-center py-4">
+        <p className="text-sm text-ink-subtle text-center py-4">
           Nenhum registro cadastrado.
         </p>
       ) : (
-        <div className="divide-y divide-slate-100 dark:divide-slate-700/40">
+        <div className="divide-y divide-canvas-border">
           {items.map((item) => (
             <div key={item.id} className="flex items-center gap-2 py-2">
               {editandoId === item.id ? (
@@ -137,39 +137,39 @@ function CrudSection({ title, items, isLoading, isAdmin, onCreate, onUpdate, onD
                     className={inputClass}
                   />
                   <button onClick={handleUpdate} disabled={salvando}
-                    className={`${btnIcon} text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 disabled:opacity-50`}>
+                    className={`${btnIcon} text-ledger-success hover:bg-ledger-success/10 disabled:opacity-50`}>
                     <Check className="w-4 h-4" />
                   </button>
                   <button onClick={() => setEditandoId(null)}
-                    className={`${btnIcon} text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700`}>
+                    className={`${btnIcon} text-ink-subtle hover:bg-surface`}>
                     <X className="w-4 h-4" />
                   </button>
                 </>
               ) : deletandoId === item.id ? (
                 <>
-                  <span className="flex-1 text-sm text-slate-500 dark:text-slate-400 truncate">
-                    Excluir <strong className="text-slate-700 dark:text-slate-200">{item.label}</strong>?
+                  <span className="flex-1 text-sm text-ink-muted truncate">
+                    Excluir <strong className="text-ink">{item.label}</strong>?
                   </span>
                   <button onClick={() => handleDelete(item.id)} disabled={salvando}
-                    className={`${btnIcon} text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 disabled:opacity-50`}>
+                    className={`${btnIcon} text-ledger-danger hover:bg-ledger-danger/10 disabled:opacity-50`}>
                     <Check className="w-4 h-4" />
                   </button>
                   <button onClick={() => setDeletandoId(null)}
-                    className={`${btnIcon} text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700`}>
+                    className={`${btnIcon} text-ink-subtle hover:bg-surface`}>
                     <X className="w-4 h-4" />
                   </button>
                 </>
               ) : (
                 <>
-                  <span className="flex-1 text-sm text-slate-800 dark:text-slate-200 truncate">{item.label}</span>
+                  <span className="flex-1 text-sm text-ink truncate">{item.label}</span>
                   {isAdmin && (
                     <>
                       <button onClick={() => startEdit(item)}
-                        className={`${btnIcon} text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20`}>
+                        className={`${btnIcon} text-ink-subtle hover:text-accent hover:bg-accent/10`}>
                         <Pencil className="w-3.5 h-3.5" />
                       </button>
                       <button onClick={() => setDeletandoId(item.id)}
-                        className={`${btnIcon} text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20`}>
+                        className={`${btnIcon} text-ink-subtle hover:text-ledger-danger hover:bg-ledger-danger/10`}>
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
                     </>
@@ -236,8 +236,8 @@ export function ConfiguracoesPage() {
     <div className="flex flex-col gap-5">
       {/* Cabeçalho */}
       <div>
-        <h1 className="text-xl font-bold text-slate-900 dark:text-white">Configurações</h1>
-        <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">
+        <h1 className="text-xl font-bold text-ink">Configurações</h1>
+        <p className="text-sm text-ink-muted mt-0.5">
           Gerencie membros da família, credores e tags
         </p>
       </div>

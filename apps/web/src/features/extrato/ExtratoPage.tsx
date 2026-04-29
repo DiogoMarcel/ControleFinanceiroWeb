@@ -58,9 +58,9 @@ function getFimMes() {
 // ── Sub-componentes ────────────────────────────────────────────────────────
 
 const TipoIcon = ({ tipo }: { tipo: string }) => {
-  if (tipo === 'R') return <TrendingUp className="w-4 h-4 text-emerald-600" />;
-  if (tipo === 'P') return <TrendingDown className="w-4 h-4 text-red-500" />;
-  return <Minus className="w-4 h-4 text-slate-400" />;
+  if (tipo === 'R') return <TrendingUp className="w-4 h-4 text-ledger-success" />;
+  if (tipo === 'P') return <TrendingDown className="w-4 h-4 text-ledger-danger" />;
+  return <Minus className="w-4 h-4 text-ink-subtle" />;
 };
 
 function LancamentosTab({ data, isLoading, isError }: {
@@ -69,66 +69,66 @@ function LancamentosTab({ data, isLoading, isError }: {
   isError: boolean;
 }) {
   return (
-    <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
+    <div className="bg-surface-raised rounded-xl border border-canvas-border overflow-hidden">
       {isLoading ? (
-        <div className="divide-y divide-slate-100 dark:divide-slate-700">
+        <div className="divide-y divide-canvas-border">
           {Array.from({ length: 8 }).map((_, i) => (
             <div key={i} className="px-4 py-3 flex items-center gap-4 animate-pulse">
-              <div className="w-8 h-8 bg-slate-200 dark:bg-slate-700 rounded-full" />
+              <div className="w-8 h-8 bg-canvas-border rounded-full" />
               <div className="flex-1 space-y-1.5">
-                <div className="h-3 bg-slate-200 dark:bg-slate-700 rounded w-1/3" />
-                <div className="h-3 bg-slate-200 dark:bg-slate-700 rounded w-1/2" />
+                <div className="h-3 bg-canvas-border rounded w-1/3" />
+                <div className="h-3 bg-canvas-border rounded w-1/2" />
               </div>
-              <div className="h-4 bg-slate-200 dark:bg-slate-700 rounded w-24" />
-              <div className="h-4 bg-slate-200 dark:bg-slate-700 rounded w-28" />
+              <div className="h-4 bg-canvas-border rounded w-24" />
+              <div className="h-4 bg-canvas-border rounded w-28" />
             </div>
           ))}
         </div>
       ) : isError ? (
-        <div className="p-8 text-center text-red-500 text-sm">Erro ao carregar o extrato. Tente novamente.</div>
+        <div className="p-8 text-center text-ledger-danger text-sm">Erro ao carregar o extrato. Tente novamente.</div>
       ) : !data || data.length === 0 ? (
-        <div className="p-8 text-center text-slate-500 dark:text-slate-400 text-sm">Nenhum lançamento encontrado no período.</div>
+        <div className="p-8 text-center text-ink-muted text-sm">Nenhum lançamento encontrado no período.</div>
       ) : (
         <>
-          <div className="hidden md:grid grid-cols-[140px_1fr_120px_140px] gap-4 px-4 py-2 bg-slate-50 dark:bg-slate-700/50 border-b border-slate-200 dark:border-slate-700 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">
+          <div className="hidden md:grid grid-cols-[140px_1fr_120px_140px] gap-4 px-4 py-2 bg-surface border-b border-canvas-border text-xs font-semibold text-ink-muted uppercase tracking-wide">
             <span>Data</span>
             <span>Descrição</span>
             <span className="text-right">Valor</span>
             <span className="text-right">Saldo</span>
           </div>
-          <div className="divide-y divide-slate-100 dark:divide-slate-700">
+          <div className="divide-y divide-canvas-border">
             {data.map((item) => (
               <div
                 key={item.idsaldoextrato}
-                className="grid grid-cols-[auto_1fr] md:grid-cols-[140px_1fr_120px_140px] gap-x-4 gap-y-0.5 px-4 py-3 items-center hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors"
+                className="grid grid-cols-[auto_1fr] md:grid-cols-[140px_1fr_120px_140px] gap-x-4 gap-y-0.5 px-4 py-3 items-center hover:bg-surface transition-colors"
               >
                 <div className="flex items-center gap-2">
                   <TipoIcon tipo={item.tiposaldo} />
-                  <span className="text-sm text-slate-600 dark:text-slate-300 whitespace-nowrap">
+                  <span className="text-sm text-ink-muted whitespace-nowrap">
                     {formatDate(item.datalancamento)}
                   </span>
                 </div>
                 <div className="min-w-0">
-                  <p className="text-sm font-medium text-slate-900 dark:text-white truncate">{item.descricao}</p>
+                  <p className="text-sm font-medium text-ink truncate">{item.descricao}</p>
                   {item.contaDescricao && (
-                    <p className="text-xs text-slate-400 dark:text-slate-500 truncate">{item.contaDescricao}</p>
+                    <p className="text-xs text-ink-subtle truncate">{item.contaDescricao}</p>
                   )}
                 </div>
                 <div className="md:text-right col-start-2 md:col-start-auto">
                   {item.tiposaldo === 'P' ? (
-                    <span className="text-sm font-medium text-red-500 dark:text-red-400">-{formatBRL(item.valor)}</span>
+                    <span className="text-sm font-medium text-ledger-danger">-{formatBRL(item.valor)}</span>
                   ) : (
-                    <span className="text-sm font-medium text-emerald-600 dark:text-emerald-400">+{formatBRL(item.valor)}</span>
+                    <span className="text-sm font-medium text-ledger-success">+{formatBRL(item.valor)}</span>
                   )}
                 </div>
                 <div className="md:text-right col-start-2 md:col-start-auto">
-                  <span className="text-sm text-slate-700 dark:text-slate-300 font-semibold">{formatBRL(item.saldo)}</span>
+                  <span className="text-sm text-ink font-semibold">{formatBRL(item.saldo)}</span>
                 </div>
               </div>
             ))}
           </div>
-          <div className="px-4 py-2 border-t border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-700/50">
-            <p className="text-xs text-slate-400 dark:text-slate-500">
+          <div className="px-4 py-2 border-t border-canvas-border bg-surface">
+            <p className="text-xs text-ink-subtle">
               {data.length} {data.length === 1 ? 'lançamento' : 'lançamentos'}
             </p>
           </div>
@@ -146,15 +146,15 @@ function EvolucaoPortadoresTab({ data, isLoading, isError }: {
   if (isLoading) {
     return (
       <div className="space-y-4">
-        <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-4 h-64 animate-pulse" />
-        <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-4 h-48 animate-pulse" />
+        <div className="bg-surface-raised rounded-xl border border-canvas-border p-4 h-64 animate-pulse" />
+        <div className="bg-surface-raised rounded-xl border border-canvas-border p-4 h-48 animate-pulse" />
       </div>
     );
   }
 
   if (isError) {
     return (
-      <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-8 text-center text-red-500 text-sm">
+      <div className="bg-surface-raised rounded-xl border border-canvas-border p-8 text-center text-ledger-danger text-sm">
         Erro ao carregar evolução. Tente novamente.
       </div>
     );
@@ -162,7 +162,7 @@ function EvolucaoPortadoresTab({ data, isLoading, isError }: {
 
   if (!data || data.length === 0) {
     return (
-      <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-8 text-center text-slate-500 dark:text-slate-400 text-sm">
+      <div className="bg-surface-raised rounded-xl border border-canvas-border p-8 text-center text-ink-muted text-sm">
         Nenhum portador encontrado.
       </div>
     );
@@ -187,16 +187,16 @@ function EvolucaoPortadoresTab({ data, isLoading, isError }: {
       {/* Totalizadores do período */}
       <div className="grid grid-cols-3 gap-3">
         {[
-          { label: 'Saldo Inicial', value: totalInicio, color: 'text-slate-700 dark:text-slate-200' },
+          { label: 'Saldo Inicial', value: totalInicio, color: 'text-ink' },
           {
             label: 'Variação',
             value: totalVariacao,
-            color: totalVariacao >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-500 dark:text-red-400',
+            color: totalVariacao >= 0 ? 'text-ledger-success' : 'text-ledger-danger',
           },
-          { label: 'Saldo Final', value: totalFim, color: 'text-blue-700 dark:text-blue-400' },
+          { label: 'Saldo Final', value: totalFim, color: 'text-accent' },
         ].map((item) => (
-          <div key={item.label} className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-3 text-center">
-            <p className="text-xs text-slate-500 dark:text-slate-400 mb-1">{item.label}</p>
+          <div key={item.label} className="bg-surface-raised rounded-xl border border-canvas-border p-3 text-center">
+            <p className="text-xs text-ink-muted mb-1">{item.label}</p>
             <p className={`text-sm font-bold ${item.color}`}>
               {totalVariacao >= 0 || item.label !== 'Variação' ? '' : ''}{formatBRL(item.value)}
             </p>
@@ -205,16 +205,16 @@ function EvolucaoPortadoresTab({ data, isLoading, isError }: {
       </div>
 
       {/* Gráfico de variação por portador */}
-      <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-4">
-        <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-4">
+      <div className="bg-surface-raised rounded-xl border border-canvas-border p-4">
+        <h3 className="text-sm font-semibold text-ink mb-4">
           Variação por Portador no Período
         </h3>
         <ResponsiveContainer width="100%" height={Math.max(200, chartData.length * 36)}>
           <BarChart data={chartData} layout="vertical" margin={{ left: 8, right: 48 }}>
-            <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#e2e8f0" />
+            <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="oklch(90% 0.012 75)" />
             <XAxis
               type="number"
-              tick={{ fontSize: 11, fill: '#94a3b8' }}
+              tick={{ fontSize: 11, fill: 'oklch(72% 0.01 255)' }}
               axisLine={false}
               tickLine={false}
               tickFormatter={(v) => (Math.abs(v) >= 1000 ? `R$${(v / 1000).toFixed(0)}k` : `R$${v}`)}
@@ -223,21 +223,21 @@ function EvolucaoPortadoresTab({ data, isLoading, isError }: {
               type="category"
               dataKey="name"
               width={120}
-              tick={{ fontSize: 11, fill: '#64748b' }}
+              tick={{ fontSize: 11, fill: 'oklch(52% 0.015 255)' }}
               axisLine={false}
               tickLine={false}
             />
             <Tooltip
               formatter={(value) => [formatBRL(Number(value)), 'Variação']}
               labelFormatter={(_, payload) => payload?.[0]?.payload?.fullName ?? ''}
-              contentStyle={{ borderRadius: '8px', border: '1px solid #e2e8f0', fontSize: '13px' }}
+              contentStyle={{ borderRadius: '8px', border: '1px solid oklch(90% 0.012 75)', fontSize: '13px' }}
             />
-            <ReferenceLine x={0} stroke="#cbd5e1" />
+            <ReferenceLine x={0} stroke="oklch(72% 0.01 255)" />
             <Bar dataKey="variacao" radius={[0, 4, 4, 0]}>
               {chartData.map((entry, i) => (
                 <Cell
                   key={i}
-                  fill={entry.variacao >= 0 ? '#34d399' : '#f87171'}
+                  fill={entry.variacao >= 0 ? 'oklch(50% 0.13 152)' : 'oklch(53% 0.17 25)'}
                 />
               ))}
             </Bar>
@@ -246,14 +246,14 @@ function EvolucaoPortadoresTab({ data, isLoading, isError }: {
       </div>
 
       {/* Tabela detalhada */}
-      <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
-        <div className="grid grid-cols-[1fr_110px_110px_110px] gap-2 px-4 py-2 bg-slate-50 dark:bg-slate-700/50 border-b border-slate-200 dark:border-slate-700 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">
+      <div className="bg-surface-raised rounded-xl border border-canvas-border overflow-hidden">
+        <div className="grid grid-cols-[1fr_110px_110px_110px] gap-2 px-4 py-2 bg-surface border-b border-canvas-border text-xs font-semibold text-ink-muted uppercase tracking-wide">
           <span>Portador</span>
           <span className="text-right">Saldo Inicial</span>
           <span className="text-right">Variação</span>
           <span className="text-right">Saldo Final</span>
         </div>
-        <div className="divide-y divide-slate-100 dark:divide-slate-700">
+        <div className="divide-y divide-canvas-border">
           {[...data]
             .sort((a, b) => {
               // Zeros por último; demais ordenados por variação desc
@@ -265,29 +265,29 @@ function EvolucaoPortadoresTab({ data, isLoading, isError }: {
             .map((item) => (
             <div
               key={item.idportador}
-              className="grid grid-cols-[1fr_110px_110px_110px] gap-2 px-4 py-3 items-center hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors"
+              className="grid grid-cols-[1fr_110px_110px_110px] gap-2 px-4 py-3 items-center hover:bg-surface transition-colors"
             >
               <div>
-                <p className="text-sm font-medium text-slate-900 dark:text-white">{item.nomeportador}</p>
-                <p className="text-xs text-slate-400 dark:text-slate-500">{item.nomemembro}</p>
+                <p className="text-sm font-medium text-ink">{item.nomeportador}</p>
+                <p className="text-xs text-ink-subtle">{item.nomemembro}</p>
               </div>
-              <div className="text-right text-sm text-slate-600 dark:text-slate-300">
+              <div className="text-right text-sm text-ink-muted">
                 {formatBRL(item.saldoInicio)}
               </div>
               <div className="text-right">
                 <span
                   className={`text-sm font-semibold ${
                     item.variacao > 0
-                      ? 'text-emerald-600 dark:text-emerald-400'
+                      ? 'text-ledger-success'
                       : item.variacao < 0
-                      ? 'text-red-500 dark:text-red-400'
-                      : 'text-slate-400'
+                      ? 'text-ledger-danger'
+                      : 'text-ink-subtle'
                   }`}
                 >
                   {item.variacao > 0 ? '+' : ''}{formatBRL(item.variacao)}
                 </span>
               </div>
-              <div className="text-right text-sm font-semibold text-slate-800 dark:text-white">
+              <div className="text-right text-sm font-semibold text-ink">
                 {formatBRL(item.saldoFim)}
               </div>
             </div>
@@ -333,38 +333,38 @@ export function ExtratoPage() {
     <div className="max-w-5xl mx-auto px-4 py-6 space-y-6">
       {/* Header */}
       <div className="flex items-center gap-3">
-        <FileText className="w-6 h-6 text-blue-600" />
-        <h1 className="text-xl font-semibold text-slate-900 dark:text-white">Extrato</h1>
+        <FileText className="w-6 h-6 text-accent" />
+        <h1 className="text-xl font-semibold text-ink">Extrato</h1>
       </div>
 
       {/* Filtros */}
-      <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-4">
+      <div className="bg-surface-raised rounded-xl border border-canvas-border p-4">
         <div className="flex flex-wrap gap-4 items-end">
           <div className="flex flex-col gap-1">
-            <label className="text-xs font-medium text-slate-600 dark:text-slate-400">De</label>
+            <label className="text-xs font-medium text-ink-muted">De</label>
             <input
               type="date"
               value={inicio}
               onChange={(e) => setInicio(e.target.value)}
-              className="border border-slate-300 dark:border-slate-600 rounded-lg px-3 py-2 text-sm bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="border border-canvas-border rounded-lg px-3 py-2 text-sm bg-surface-raised text-ink focus:outline-none focus:ring-2 focus:ring-accent/25 focus:border-accent/60"
             />
           </div>
           <div className="flex flex-col gap-1">
-            <label className="text-xs font-medium text-slate-600 dark:text-slate-400">Até</label>
+            <label className="text-xs font-medium text-ink-muted">Até</label>
             <input
               type="date"
               value={fim}
               onChange={(e) => setFim(e.target.value)}
-              className="border border-slate-300 dark:border-slate-600 rounded-lg px-3 py-2 text-sm bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="border border-canvas-border rounded-lg px-3 py-2 text-sm bg-surface-raised text-ink focus:outline-none focus:ring-2 focus:ring-accent/25 focus:border-accent/60"
             />
           </div>
           {aba === 'lancamentos' && (
             <div className="flex flex-col gap-1">
-              <label className="text-xs font-medium text-slate-600 dark:text-slate-400">Tipo</label>
+              <label className="text-xs font-medium text-ink-muted">Tipo</label>
               <select
                 value={tipo}
                 onChange={(e) => setTipo(e.target.value)}
-                className="border border-slate-300 dark:border-slate-600 rounded-lg px-3 py-2 text-sm bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="border border-canvas-border rounded-lg px-3 py-2 text-sm bg-surface-raised text-ink focus:outline-none focus:ring-2 focus:ring-accent/25 focus:border-accent/60"
               >
                 <option value="">Todos</option>
                 <option value="P">Pagamento</option>
@@ -377,13 +377,13 @@ export function ExtratoPage() {
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 bg-slate-100 dark:bg-slate-800 rounded-lg p-1 w-fit border border-slate-200 dark:border-slate-700">
+      <div className="flex gap-1 bg-surface rounded-lg p-1 w-fit border border-canvas-border">
         <button
           onClick={() => setAba('lancamentos')}
           className={`flex items-center gap-2 px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${
             aba === 'lancamentos'
-              ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm'
-              : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
+              ? 'bg-surface-raised text-ink shadow-sm'
+              : 'text-ink-muted hover:text-ink'
           }`}
         >
           <List className="w-4 h-4" />
@@ -393,8 +393,8 @@ export function ExtratoPage() {
           onClick={() => setAba('portadores')}
           className={`flex items-center gap-2 px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${
             aba === 'portadores'
-              ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm'
-              : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
+              ? 'bg-surface-raised text-ink shadow-sm'
+              : 'text-ink-muted hover:text-ink'
           }`}
         >
           <BarChart2 className="w-4 h-4" />

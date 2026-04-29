@@ -14,10 +14,10 @@ import { ptBR } from 'date-fns/locale';
 interface AluguelConta {
   idaluguelconta: number;
   id_aluguel: number | null;
-  tipoconta: string;       // 'R'=receita/cobrança | 'P'=pagamento/desconto
-  valor: number;           // pode ser negativo no banco (legado Delphi)
+  tipoconta: string;
+  valor: number;
   descricao: string;
-  compartilhado: string;   // 'V'=ambos(÷2) | 'S'=só comp | 'F'=só meu lado
+  compartilhado: string;
 }
 
 interface AluguelComp {
@@ -48,7 +48,6 @@ interface TemplateItem {
 
 function anoAtual() { return String(new Date().getFullYear()); }
 
-// dataaluguel pode chegar como "2026-03-01T00:00:00.000Z" ou "2026-03-01"
 function toDateStr(date: string) { return date.length > 10 ? date.slice(0, 10) : date; }
 
 function mesAnoLabel(date: string) {
@@ -66,21 +65,10 @@ function mesAnoShort(date: string) {
 function isPago(a: Aluguel) { return a.datapagamento !== null; }
 function isPagoComp(a: Aluguel) { return (a.aluguelcomp[0]?.datapagamento ?? null) !== null; }
 
-/**
- * Valor efetivo de um item, respeitando tipoconta como sinal:
- * 'R' → positivo (cobrança/receita)
- * 'P' → negativo (pagamento/desconto)
- * Normaliza também valores negativos no banco (legado Delphi).
- */
 function effectiveValor(c: AluguelConta): number {
   return c.tipoconta === 'R' ? Math.abs(c.valor) : -Math.abs(c.valor);
 }
 
-/**
- * LEFT total = valoraluguel
- *   + soma dos itens 'F' (só meu lado) pelo effectiveValor
- *   + soma dos itens 'V' (ambos) pelo effectiveValor/2
- */
 function calcMeuLado(a: Aluguel): number {
   const base = a.valoraluguel ?? 0;
   const f = a.aluguelconta.filter(c => c.compartilhado === 'F')
@@ -90,12 +78,6 @@ function calcMeuLado(a: Aluguel): number {
   return base + f + v;
 }
 
-/**
- * RIGHT total = valoraluguel/2 (o que pago ao comp)
- *   − soma dos itens 'S' (só comp) pelo effectiveValor
- *   − soma dos itens 'V' (ambos) pelo effectiveValor/2
- * Positivo = ainda pago ao comp; Negativo = comp me paga.
- */
 function calcCompLado(a: Aluguel): number {
   const compBase = (a.valoraluguel ?? 0) / 2;
   const s = a.aluguelconta.filter(c => c.compartilhado === 'S')
@@ -110,10 +92,10 @@ function calcCompLado(a: Aluguel): number {
 function Modal({ title, onClose, children }: { title: string; onClose: () => void; children: React.ReactNode }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-      <div className="bg-white dark:bg-slate-800 rounded-xl shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto">
-        <div className="flex items-center justify-between px-5 py-4 border-b border-slate-200 dark:border-slate-700">
-          <h2 className="text-base font-semibold text-slate-900 dark:text-white">{title}</h2>
-          <button onClick={onClose} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-xl leading-none">×</button>
+      <div className="bg-surface-raised rounded-xl shadow-sm w-full max-w-md max-h-[90vh] overflow-y-auto">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-canvas-border">
+          <h2 className="text-base font-semibold text-ink">{title}</h2>
+          <button onClick={onClose} className="text-ink-subtle hover:text-ink transition-colors text-xl leading-none">×</button>
         </div>
         <div className="p-5">{children}</div>
       </div>
@@ -146,7 +128,7 @@ function AluguelForm({ initial, valorSugerido, onSubmit, onCancel, loading }: Al
       : valorSugerido != null ? String(valorSugerido) : '',
   );
 
-  const inputCls = 'w-full border border-slate-300 dark:border-slate-600 rounded-lg px-3 py-2 text-sm bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500';
+  const inputCls = 'w-full border border-canvas-border rounded-lg px-3 py-2 text-sm bg-surface-raised text-ink focus:outline-none focus:ring-2 focus:ring-accent/25 focus:border-accent/60 placeholder:text-ink-subtle';
 
   return (
     <form
@@ -157,14 +139,14 @@ function AluguelForm({ initial, valorSugerido, onSubmit, onCancel, loading }: Al
       className="space-y-4"
     >
       <div>
-        <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Mês / Ano *</label>
+        <label className="block text-xs font-medium text-ink-muted mb-1">Mês / Ano *</label>
         <input required type="month" value={mes} onChange={e => setMes(e.target.value)} className={inputCls} />
       </div>
       <div>
-        <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
+        <label className="block text-xs font-medium text-ink-muted mb-1">
           Valor total do aluguel (R$)
           {!initial && valorSugerido != null && (
-            <span className="ml-1.5 text-slate-400 font-normal">— sugerido do mês anterior</span>
+            <span className="ml-1.5 text-ink-subtle font-normal">— sugerido do mês anterior</span>
           )}
         </label>
         <input
@@ -174,10 +156,10 @@ function AluguelForm({ initial, valorSugerido, onSubmit, onCancel, loading }: Al
         />
       </div>
       <div className="flex justify-end gap-2 pt-2">
-        <button type="button" onClick={onCancel} className="px-4 py-2 text-sm rounded-lg border border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors">
+        <button type="button" onClick={onCancel} className="px-4 py-2 text-sm rounded-lg border border-canvas-border text-ink-muted hover:bg-surface transition-colors">
           Cancelar
         </button>
-        <button type="submit" disabled={loading} className="px-4 py-2 text-sm rounded-lg bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 transition-colors">
+        <button type="submit" disabled={loading} className="px-4 py-2 text-sm rounded-lg bg-accent text-white hover:opacity-90 disabled:opacity-50 transition-colors">
           {loading ? 'Salvando…' : 'Salvar'}
         </button>
       </div>
@@ -196,13 +178,11 @@ interface ContaFormProps {
 
 function ContaForm({ initial, onSubmit, onCancel, loading }: ContaFormProps) {
   const [tipoconta, setTipo] = useState(initial?.tipoconta ?? 'R');
-  // valor exibido sempre positivo; tipoconta determina o sinal
   const [valor, setValor] = useState(initial?.valor != null ? String(Math.abs(initial.valor)) : '');
   const [descricao, setDescricao] = useState(initial?.descricao ?? '');
-  // default 'V' para novos itens compartilhados
   const [compartilhado, setComp] = useState(initial?.compartilhado ?? 'V');
 
-  const inputCls = 'w-full border border-slate-300 dark:border-slate-600 rounded-lg px-3 py-2 text-sm bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500';
+  const inputCls = 'w-full border border-canvas-border rounded-lg px-3 py-2 text-sm bg-surface-raised text-ink focus:outline-none focus:ring-2 focus:ring-accent/25 focus:border-accent/60 placeholder:text-ink-subtle';
 
   const hints: Record<string, string> = {
     V: 'Aparece em AMBOS os lados, cada um paga metade (ex: água, internet).',
@@ -216,36 +196,36 @@ function ContaForm({ initial, onSubmit, onCancel, loading }: ContaFormProps) {
       className="space-y-4"
     >
       <div>
-        <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Descrição *</label>
+        <label className="block text-xs font-medium text-ink-muted mb-1">Descrição *</label>
         <input required value={descricao} onChange={e => setDescricao(e.target.value)} maxLength={50} className={inputCls} />
       </div>
       <div className="grid grid-cols-2 gap-3">
         <div>
-          <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Tipo *</label>
+          <label className="block text-xs font-medium text-ink-muted mb-1">Tipo *</label>
           <select value={tipoconta} onChange={e => setTipo(e.target.value)} className={inputCls}>
             <option value="R">Cobrança (+)</option>
             <option value="P">Desconto / Pagto (−)</option>
           </select>
         </div>
         <div>
-          <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Valor (R$) *</label>
+          <label className="block text-xs font-medium text-ink-muted mb-1">Valor (R$) *</label>
           <input required type="number" step="0.01" min="0" value={valor} onChange={e => setValor(e.target.value)} className={inputCls} placeholder="0,00" />
         </div>
       </div>
       <div>
-        <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Visibilidade</label>
+        <label className="block text-xs font-medium text-ink-muted mb-1">Visibilidade</label>
         <select value={compartilhado} onChange={e => setComp(e.target.value)} className={inputCls}>
           <option value="V">Ambos — cada lado paga metade</option>
           <option value="S">Só compartilhado — comp me deve o total</option>
           <option value="F">Só meu lado — não afeta o comp</option>
         </select>
-        <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">{hints[compartilhado]}</p>
+        <p className="text-xs text-ink-subtle mt-1">{hints[compartilhado]}</p>
       </div>
       <div className="flex justify-end gap-2 pt-2">
-        <button type="button" onClick={onCancel} className="px-4 py-2 text-sm rounded-lg border border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors">
+        <button type="button" onClick={onCancel} className="px-4 py-2 text-sm rounded-lg border border-canvas-border text-ink-muted hover:bg-surface transition-colors">
           Cancelar
         </button>
-        <button type="submit" disabled={loading} className="px-4 py-2 text-sm rounded-lg bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 transition-colors">
+        <button type="submit" disabled={loading} className="px-4 py-2 text-sm rounded-lg bg-accent text-white hover:opacity-90 disabled:opacity-50 transition-colors">
           {loading ? 'Salvando…' : 'Salvar'}
         </button>
       </div>
@@ -259,7 +239,7 @@ function ItemRow({
   conta, half, isAdmin, onEdit, onDelete, deleting,
 }: {
   conta: AluguelConta;
-  half?: boolean;         // V items mostram valor/2
+  half?: boolean;
   isAdmin: boolean;
   onEdit: () => void;
   onDelete: () => void;
@@ -268,9 +248,9 @@ function ItemRow({
   const [confirm, setConfirm] = useState(false);
 
   const badgeMap: Record<string, { label: string; cls: string }> = {
-    V: { label: 'Ambos', cls: 'bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400' },
-    S: { label: 'Comp', cls: 'bg-purple-100 dark:bg-purple-900/40 text-purple-600 dark:text-purple-400' },
-    F: { label: 'Meu', cls: 'bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400' },
+    V: { label: 'Ambos', cls: 'bg-accent/10 text-accent' },
+    S: { label: 'Comp',  cls: 'bg-purple-100 text-purple-600' },
+    F: { label: 'Meu',   cls: 'bg-surface border border-canvas-border text-ink-muted' },
   };
   const badge = badgeMap[conta.compartilhado] ?? badgeMap['F'];
 
@@ -279,29 +259,29 @@ function ItemRow({
   const isPositive = conta.tipoconta === 'R';
 
   return (
-    <div className="flex items-center gap-2 px-3 py-2 hover:bg-slate-50 dark:hover:bg-slate-700/30 rounded-lg transition-colors">
+    <div className="flex items-center gap-2 px-3 py-2 hover:bg-surface rounded-lg transition-colors">
       <span className={`text-xs font-medium px-1.5 py-0.5 rounded flex-shrink-0 ${badge.cls}`}>{badge.label}</span>
-      <span className="text-sm text-slate-700 dark:text-slate-300 flex-1 truncate">{conta.descricao}</span>
-      <span className={`text-sm font-semibold whitespace-nowrap ${isPositive ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-500 dark:text-red-400'}`}>
+      <span className="text-sm text-ink flex-1 truncate">{conta.descricao}</span>
+      <span className={`text-sm font-semibold whitespace-nowrap ${isPositive ? 'text-ledger-success' : 'text-ledger-danger'}`}>
         {isPositive ? '+' : '−'}{formatCurrency(displayVal)}
       </span>
       {isAdmin && (
         <div className="flex items-center gap-0.5 flex-shrink-0">
           {confirm ? (
             <>
-              <button onClick={() => { onDelete(); setConfirm(false); }} disabled={deleting} className="p-1 text-red-500 hover:text-red-700 transition-colors" aria-label="Confirmar">
+              <button onClick={() => { onDelete(); setConfirm(false); }} disabled={deleting} className="p-1 text-ledger-danger hover:opacity-80 transition-colors" aria-label="Confirmar">
                 <Check className="w-3.5 h-3.5" />
               </button>
-              <button onClick={() => setConfirm(false)} className="p-1 text-slate-400 hover:text-slate-600 transition-colors" aria-label="Cancelar">
+              <button onClick={() => setConfirm(false)} className="p-1 text-ink-subtle hover:text-ink transition-colors" aria-label="Cancelar">
                 <X className="w-3.5 h-3.5" />
               </button>
             </>
           ) : (
             <>
-              <button onClick={onEdit} className="p-1 text-slate-300 hover:text-blue-500 dark:text-slate-600 dark:hover:text-blue-400 transition-colors" aria-label="Editar">
+              <button onClick={onEdit} className="p-1 text-ink-subtle hover:text-accent transition-colors" aria-label="Editar">
                 <Pencil className="w-3.5 h-3.5" />
               </button>
-              <button onClick={() => setConfirm(true)} className="p-1 text-slate-300 hover:text-red-500 dark:text-slate-600 dark:hover:text-red-400 transition-colors" aria-label="Excluir">
+              <button onClick={() => setConfirm(true)} className="p-1 text-ink-subtle hover:text-ledger-danger transition-colors" aria-label="Excluir">
                 <Trash2 className="w-3.5 h-3.5" />
               </button>
             </>
@@ -366,8 +346,6 @@ function DetalhesPanel({ aluguel, isAdmin, ano }: { aluguel: Aluguel; isAdmin: b
   }
 
   const valor = aluguel.valoraluguel ?? 0;
-
-  // Separar itens por compartilhado
   const itensF = aluguel.aluguelconta.filter(c => c.compartilhado === 'F');
   const itensV = aluguel.aluguelconta.filter(c => c.compartilhado === 'V');
   const itensS = aluguel.aluguelconta.filter(c => c.compartilhado === 'S');
@@ -380,21 +358,21 @@ function DetalhesPanel({ aluguel, isAdmin, ano }: { aluguel: Aluguel; isAdmin: b
   const btnCls = (ativo: boolean) =>
     `flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-lg transition-colors ${
       ativo
-        ? 'bg-emerald-600 text-white hover:bg-emerald-700'
-        : 'bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-600'
+        ? 'bg-ledger-success text-white hover:opacity-90'
+        : 'bg-surface border border-canvas-border text-ink-muted hover:bg-canvas-border'
     }`;
 
   return (
     <div className="flex flex-col gap-4">
       {/* Título + botão de item */}
       <div className="flex items-center justify-between flex-wrap gap-2">
-        <h3 className="text-sm font-semibold text-slate-900 dark:text-white capitalize">
+        <h3 className="text-sm font-semibold text-ink capitalize">
           {aluguel.dataaluguel ? mesAnoLabel(aluguel.dataaluguel) : '—'}
         </h3>
         {isAdmin && (
           <button
             onClick={() => { setEditandoConta(null); setModalConta('nova'); }}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-accent text-white rounded-lg hover:opacity-90 transition-colors"
           >
             <Plus className="w-3.5 h-3.5" /> Item
           </button>
@@ -404,11 +382,11 @@ function DetalhesPanel({ aluguel, isAdmin, ano }: { aluguel: Aluguel; isAdmin: b
       {/* Dois lados */}
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
 
-        {/* ── Meu Lado — F + V(÷2) ──────────────────────────────── */}
-        <div className="rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
-          <div className="px-4 py-3 bg-slate-50 dark:bg-slate-700/50 border-b border-slate-200 dark:border-slate-700">
+        {/* ── Meu Lado ──────────────────────────────────────── */}
+        <div className="rounded-xl border border-canvas-border overflow-hidden">
+          <div className="px-4 py-3 bg-surface border-b border-canvas-border">
             <div className="flex items-center justify-between">
-              <p className="text-xs font-semibold text-slate-600 dark:text-slate-300">Meu Lado</p>
+              <p className="text-xs font-semibold text-ink-muted">Meu Lado</p>
               {isAdmin && (
                 <button onClick={() => marcarPagoMut.mutate()} disabled={marcarPagoMut.isPending} className={btnCls(isPago(aluguel))}>
                   {isPago(aluguel)
@@ -418,21 +396,19 @@ function DetalhesPanel({ aluguel, isAdmin, ano }: { aluguel: Aluguel; isAdmin: b
                 </button>
               )}
               {!isAdmin && isPago(aluguel) && (
-                <span className="text-xs text-emerald-600 dark:text-emerald-400">Pago {formatDate(aluguel.datapagamento!)}</span>
+                <span className="text-xs text-ledger-success">Pago {formatDate(aluguel.datapagamento!)}</span>
               )}
             </div>
           </div>
 
           <div className="px-4 py-3 space-y-1">
-            {/* Aluguel base */}
-            <div className="flex items-center justify-between py-1 border-b border-slate-100 dark:border-slate-700 mb-2">
-              <span className="text-xs text-slate-500 dark:text-slate-400">Aluguel</span>
-              <span className="text-sm font-semibold text-slate-900 dark:text-white">{formatCurrency(valor)}</span>
+            <div className="flex items-center justify-between py-1 border-b border-canvas-border mb-2">
+              <span className="text-xs text-ink-muted">Aluguel</span>
+              <span className="text-sm font-semibold text-ink">{formatCurrency(valor)}</span>
             </div>
 
-            {/* Itens F (só meu) e V (ambos, mostrar ÷2) */}
             {itensF.length === 0 && itensV.length === 0 ? (
-              <p className="text-xs text-slate-400 dark:text-slate-500 py-2 text-center">Sem cobranças.</p>
+              <p className="text-xs text-ink-subtle py-2 text-center">Sem cobranças.</p>
             ) : (
               <>
                 {itensF.map(c => (
@@ -453,17 +429,17 @@ function DetalhesPanel({ aluguel, isAdmin, ano }: { aluguel: Aluguel; isAdmin: b
             )}
           </div>
 
-          <div className="px-4 py-3 border-t border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-700/30 flex justify-between items-center">
-            <span className="text-xs font-semibold text-slate-600 dark:text-slate-300">Total</span>
-            <span className="text-sm font-bold text-slate-900 dark:text-white">{formatCurrency(totalMeu)}</span>
+          <div className="px-4 py-3 border-t border-canvas-border bg-surface flex justify-between items-center">
+            <span className="text-xs font-semibold text-ink-muted">Total</span>
+            <span className="text-sm font-bold text-ink">{formatCurrency(totalMeu)}</span>
           </div>
         </div>
 
-        {/* ── Compartilhado — S + V(÷2) ────────────────────────── */}
-        <div className="rounded-xl border border-purple-200 dark:border-purple-800 overflow-hidden">
-          <div className="px-4 py-3 bg-purple-50 dark:bg-purple-900/20 border-b border-purple-200 dark:border-purple-800">
+        {/* ── Compartilhado ─────────────────────────────────── */}
+        <div className="rounded-xl border border-purple-200 overflow-hidden">
+          <div className="px-4 py-3 bg-purple-50 border-b border-purple-200">
             <div className="flex items-center justify-between">
-              <p className="text-xs font-semibold text-purple-700 dark:text-purple-400">Compartilhado</p>
+              <p className="text-xs font-semibold text-purple-700">Compartilhado</p>
               {isAdmin && (
                 <button onClick={() => marcarCompMut.mutate()} disabled={marcarCompMut.isPending} className={btnCls(isPagoComp(aluguel))}>
                   {isPagoComp(aluguel)
@@ -473,21 +449,19 @@ function DetalhesPanel({ aluguel, isAdmin, ano }: { aluguel: Aluguel; isAdmin: b
                 </button>
               )}
               {!isAdmin && isPagoComp(aluguel) && (
-                <span className="text-xs text-emerald-600 dark:text-emerald-400">Pago {formatDate(compDataPag!)}</span>
+                <span className="text-xs text-ledger-success">Pago {formatDate(compDataPag!)}</span>
               )}
             </div>
           </div>
 
           <div className="px-4 py-3 space-y-1">
-            {/* Minha parte do aluguel paga ao comp */}
-            <div className="flex items-center justify-between py-1 border-b border-slate-100 dark:border-slate-700 mb-2">
-              <span className="text-xs text-slate-500 dark:text-slate-400">Aluguel (pago ao comp)</span>
-              <span className="text-sm font-semibold text-red-500 dark:text-red-400">−{formatCurrency(valor / 2)}</span>
+            <div className="flex items-center justify-between py-1 border-b border-canvas-border mb-2">
+              <span className="text-xs text-ink-muted">Aluguel (pago ao comp)</span>
+              <span className="text-sm font-semibold text-ledger-danger">−{formatCurrency(valor / 2)}</span>
             </div>
 
-            {/* Itens S (só comp) e V (ambos, ÷2) — o comp me deve esses valores */}
             {itensS.length === 0 && itensV.length === 0 ? (
-              <p className="text-xs text-slate-400 dark:text-slate-500 py-2 text-center">Sem cobranças ao compartilhado.</p>
+              <p className="text-xs text-ink-subtle py-2 text-center">Sem cobranças ao compartilhado.</p>
             ) : (
               <>
                 {itensV.map(c => (
@@ -508,11 +482,11 @@ function DetalhesPanel({ aluguel, isAdmin, ano }: { aluguel: Aluguel; isAdmin: b
             )}
           </div>
 
-          <div className="px-4 py-3 border-t border-purple-200 dark:border-purple-800 bg-purple-50 dark:bg-purple-900/10 flex justify-between items-center">
-            <span className="text-xs font-semibold text-purple-700 dark:text-purple-400">
+          <div className="px-4 py-3 border-t border-purple-200 bg-purple-50 flex justify-between items-center">
+            <span className="text-xs font-semibold text-purple-700">
               {netComp >= 0 ? 'Pago ao comp' : 'Comp me paga'}
             </span>
-            <span className={`text-sm font-bold ${netComp >= 0 ? 'text-slate-900 dark:text-white' : 'text-emerald-600 dark:text-emerald-400'}`}>
+            <span className={`text-sm font-bold ${netComp >= 0 ? 'text-ink' : 'text-ledger-success'}`}>
               {formatCurrency(Math.abs(netComp))}
             </span>
           </div>
@@ -551,37 +525,37 @@ function TemplateItemRow({
   const [confirm, setConfirm] = useState(false);
 
   const badgeMap: Record<string, { label: string; cls: string }> = {
-    V: { label: 'Ambos', cls: 'bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400' },
-    S: { label: 'Comp', cls: 'bg-purple-100 dark:bg-purple-900/40 text-purple-600 dark:text-purple-400' },
-    F: { label: 'Meu', cls: 'bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400' },
+    V: { label: 'Ambos', cls: 'bg-accent/10 text-accent' },
+    S: { label: 'Comp',  cls: 'bg-purple-100 text-purple-600' },
+    F: { label: 'Meu',   cls: 'bg-surface border border-canvas-border text-ink-muted' },
   };
   const badge = badgeMap[item.compartilhado] ?? badgeMap['F'];
   const isPositive = item.tipoconta === 'R';
 
   return (
-    <div className="flex items-center gap-2 px-3 py-2 hover:bg-slate-50 dark:hover:bg-slate-700/30 rounded-lg">
+    <div className="flex items-center gap-2 px-3 py-2 hover:bg-surface rounded-lg transition-colors">
       <span className={`text-xs font-medium px-1.5 py-0.5 rounded flex-shrink-0 ${badge.cls}`}>{badge.label}</span>
-      <span className="text-sm text-slate-700 dark:text-slate-300 flex-1 truncate">{item.descricao}</span>
-      <span className={`text-sm font-semibold whitespace-nowrap ${isPositive ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-500 dark:text-red-400'}`}>
+      <span className="text-sm text-ink flex-1 truncate">{item.descricao}</span>
+      <span className={`text-sm font-semibold whitespace-nowrap ${isPositive ? 'text-ledger-success' : 'text-ledger-danger'}`}>
         {isPositive ? '+' : '−'}{formatCurrency(item.valor)}
       </span>
       {isAdmin && (
         <div className="flex items-center gap-0.5 flex-shrink-0">
           {confirm ? (
             <>
-              <button onClick={() => { onDelete(); setConfirm(false); }} disabled={deleting} className="p-1 text-red-500 hover:text-red-700" aria-label="Confirmar">
+              <button onClick={() => { onDelete(); setConfirm(false); }} disabled={deleting} className="p-1 text-ledger-danger hover:opacity-80" aria-label="Confirmar">
                 <Check className="w-3.5 h-3.5" />
               </button>
-              <button onClick={() => setConfirm(false)} className="p-1 text-slate-400 hover:text-slate-600" aria-label="Cancelar">
+              <button onClick={() => setConfirm(false)} className="p-1 text-ink-subtle hover:text-ink" aria-label="Cancelar">
                 <X className="w-3.5 h-3.5" />
               </button>
             </>
           ) : (
             <>
-              <button onClick={onEdit} className="p-1 text-slate-300 hover:text-blue-500 dark:text-slate-600 dark:hover:text-blue-400 transition-colors" aria-label="Editar">
+              <button onClick={onEdit} className="p-1 text-ink-subtle hover:text-accent transition-colors" aria-label="Editar">
                 <Pencil className="w-3.5 h-3.5" />
               </button>
-              <button onClick={() => setConfirm(true)} className="p-1 text-slate-300 hover:text-red-500 dark:text-slate-600 dark:hover:text-red-400 transition-colors" aria-label="Excluir">
+              <button onClick={() => setConfirm(true)} className="p-1 text-ink-subtle hover:text-ledger-danger transition-colors" aria-label="Excluir">
                 <Trash2 className="w-3.5 h-3.5" />
               </button>
             </>
@@ -630,28 +604,27 @@ function TemplatePainel({ isAdmin }: { isAdmin: boolean }) {
   }
 
   return (
-    <div className="mb-6 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 overflow-hidden">
-      {/* Header colapsável */}
+    <div className="mb-6 rounded-xl border border-canvas-border bg-surface-raised overflow-hidden">
       <button
         onClick={() => setAberto(v => !v)}
-        className="w-full flex items-center justify-between px-4 py-3 text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/40 transition-colors"
+        className="w-full flex items-center justify-between px-4 py-3 text-sm font-medium text-ink hover:bg-surface transition-colors"
       >
         <div className="flex items-center gap-2">
-          <Settings2 className="w-4 h-4 text-slate-400" />
+          <Settings2 className="w-4 h-4 text-ink-subtle" />
           <span>Itens Padrão do Template</span>
           {template.length > 0 && (
-            <span className="text-xs text-slate-400 font-normal">
+            <span className="text-xs text-ink-subtle font-normal">
               — {template.length} item{template.length !== 1 ? 's' : ''} aplicado{template.length !== 1 ? 's' : ''} a cada novo mês
             </span>
           )}
         </div>
-        {aberto ? <ChevronUp className="w-4 h-4 text-slate-400" /> : <ChevronDown className="w-4 h-4 text-slate-400" />}
+        {aberto ? <ChevronUp className="w-4 h-4 text-ink-subtle" /> : <ChevronDown className="w-4 h-4 text-ink-subtle" />}
       </button>
 
       {aberto && (
-        <div className="border-t border-slate-200 dark:border-slate-700 px-4 py-3">
+        <div className="border-t border-canvas-border px-4 py-3">
           {template.length === 0 ? (
-            <p className="text-xs text-slate-400 dark:text-slate-500 text-center py-3">
+            <p className="text-xs text-ink-subtle text-center py-3">
               Nenhum item configurado. Adicione itens que serão criados automaticamente a cada novo mês.
             </p>
           ) : (
@@ -671,7 +644,7 @@ function TemplatePainel({ isAdmin }: { isAdmin: boolean }) {
           {isAdmin && (
             <button
               onClick={() => { setEditandoItem(null); setModalItem('novo'); }}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium border border-dashed border-slate-300 dark:border-slate-600 text-slate-500 dark:text-slate-400 rounded-lg hover:border-blue-400 hover:text-blue-500 transition-colors"
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium border border-dashed border-canvas-border text-ink-subtle rounded-lg hover:border-accent hover:text-accent transition-colors"
             >
               <Plus className="w-3.5 h-3.5" /> Adicionar item padrão
             </button>
@@ -760,15 +733,15 @@ export function AlugueisPage() {
   const totalPendente = pendentes.reduce((s, a) => s + calcMeuLado(a), 0);
 
   const anos = Array.from({ length: 5 }, (_, i) => String(new Date().getFullYear() - i));
-  const selectCls = 'border border-slate-300 dark:border-slate-600 rounded-lg px-2 py-1 text-xs bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500';
+  const selectCls = 'border border-canvas-border rounded-lg px-2 py-1 text-xs bg-surface-raised text-ink focus:outline-none focus:ring-2 focus:ring-accent/25 focus:border-accent/60';
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-6">
       {/* Header */}
       <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
         <div className="flex items-center gap-3">
-          <Building2 className="w-6 h-6 text-blue-600" />
-          <h1 className="text-xl font-semibold text-slate-900 dark:text-white">Aluguéis</h1>
+          <Building2 className="w-6 h-6 text-accent" />
+          <h1 className="text-xl font-semibold text-ink">Aluguéis</h1>
         </div>
         <div className="flex items-center gap-2">
           <select value={ano} onChange={e => { setAno(e.target.value); setSelecionadoId(null); }} className={selectCls}>
@@ -777,7 +750,7 @@ export function AlugueisPage() {
           {isAdmin && (
             <button
               onClick={() => { setEditando(null); setModal('novo'); }}
-              className="flex items-center gap-2 px-4 py-2 text-sm font-medium bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              className="flex items-center gap-2 px-4 py-2 text-sm font-medium bg-accent text-white rounded-lg hover:opacity-90 transition-colors"
             >
               <Plus className="w-4 h-4" /> Novo
             </button>
@@ -785,81 +758,80 @@ export function AlugueisPage() {
         </div>
       </div>
 
-      {/* Template de itens padrão */}
+      {/* Template */}
       <TemplatePainel isAdmin={isAdmin} />
 
       {/* Stats */}
       {!isLoading && alugueis.length > 0 && (
         <div className="grid grid-cols-3 gap-3 mb-6">
-          <div className="rounded-xl border border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-900/20 px-2 py-2 sm:px-4 sm:py-3">
+          <div className="rounded-xl border border-ledger-success/30 bg-ledger-success/8 px-2 py-2 sm:px-4 sm:py-3">
             <div className="flex items-center gap-1 mb-1">
-              <CheckCircle2 className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-emerald-500 flex-shrink-0" />
-              <p className="text-xs text-emerald-600 dark:text-emerald-400">Recebido</p>
+              <CheckCircle2 className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-ledger-success flex-shrink-0" />
+              <p className="text-xs text-ledger-success">Recebido</p>
             </div>
-            <p className="text-xs sm:text-sm font-semibold text-slate-900 dark:text-white tabular-nums">{formatCurrency(totalRecebido)}</p>
-            <p className="text-xs text-slate-400 mt-0.5">{pagos.length} mês{pagos.length !== 1 ? 'es' : ''}</p>
+            <p className="text-xs sm:text-sm font-semibold text-ink tabular-nums">{formatCurrency(totalRecebido)}</p>
+            <p className="text-xs text-ink-subtle mt-0.5">{pagos.length} mês{pagos.length !== 1 ? 'es' : ''}</p>
           </div>
-          <div className="rounded-xl border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/20 px-2 py-2 sm:px-4 sm:py-3">
+          <div className="rounded-xl border border-ledger-warning/30 bg-ledger-warning/8 px-2 py-2 sm:px-4 sm:py-3">
             <div className="flex items-center gap-1 mb-1">
-              <Clock className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-amber-500 flex-shrink-0" />
-              <p className="text-xs text-amber-600 dark:text-amber-400">Pendente</p>
+              <Clock className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-ledger-warning flex-shrink-0" />
+              <p className="text-xs text-ledger-warning">Pendente</p>
             </div>
-            <p className="text-xs sm:text-sm font-semibold text-slate-900 dark:text-white tabular-nums">{formatCurrency(totalPendente)}</p>
-            <p className="text-xs text-slate-400 mt-0.5">{pendentes.length} mês{pendentes.length !== 1 ? 'es' : ''}</p>
+            <p className="text-xs sm:text-sm font-semibold text-ink tabular-nums">{formatCurrency(totalPendente)}</p>
+            <p className="text-xs text-ink-subtle mt-0.5">{pendentes.length} mês{pendentes.length !== 1 ? 'es' : ''}</p>
           </div>
-          <div className="rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-700/40 px-2 py-2 sm:px-4 sm:py-3">
-            <p className="text-xs text-slate-500 dark:text-slate-400 mb-1">Total {ano}</p>
-            <p className="text-xs sm:text-sm font-semibold text-slate-900 dark:text-white tabular-nums">{formatCurrency(totalRecebido + totalPendente)}</p>
-            <p className="text-xs text-slate-400 mt-0.5">{alugueis.length} lançamento{alugueis.length !== 1 ? 's' : ''}</p>
+          <div className="rounded-xl border border-canvas-border bg-surface px-2 py-2 sm:px-4 sm:py-3">
+            <p className="text-xs text-ink-muted mb-1">Total {ano}</p>
+            <p className="text-xs sm:text-sm font-semibold text-ink tabular-nums">{formatCurrency(totalRecebido + totalPendente)}</p>
+            <p className="text-xs text-ink-subtle mt-0.5">{alugueis.length} lançamento{alugueis.length !== 1 ? 's' : ''}</p>
           </div>
         </div>
       )}
 
       <div className="grid grid-cols-1 lg:grid-cols-[260px_1fr] gap-6">
         {/* Lista */}
-        <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden self-start">
+        <div className="bg-surface-raised rounded-xl border border-canvas-border overflow-hidden self-start">
           {isLoading ? (
-            <div className="divide-y divide-slate-100 dark:divide-slate-700">
+            <div className="divide-y divide-canvas-border">
               {Array.from({ length: 4 }).map((_, i) => (
                 <div key={i} className="px-4 py-4 animate-pulse space-y-1.5">
-                  <div className="h-3 bg-slate-200 dark:bg-slate-700 rounded w-2/3" />
-                  <div className="h-2 bg-slate-100 dark:bg-slate-700 rounded w-1/2" />
+                  <div className="h-3 bg-canvas-border rounded w-2/3" />
+                  <div className="h-2 bg-canvas-border/60 rounded w-1/2" />
                 </div>
               ))}
             </div>
           ) : alugueis.length === 0 ? (
-            <div className="px-4 py-8 text-center text-slate-400 dark:text-slate-500 text-sm">
+            <div className="px-4 py-8 text-center text-ink-subtle text-sm">
               Nenhum lançamento em {ano}.
             </div>
           ) : (
-            <ul className="divide-y divide-slate-100 dark:divide-slate-700">
+            <ul className="divide-y divide-canvas-border">
               {alugueis.map(a => (
                 <li
                   key={a.idaluguel}
                   onClick={() => setSelecionadoId(a.idaluguel)}
                   className={`flex items-start gap-2.5 px-3 py-3 cursor-pointer transition-colors ${
                     selecionado?.idaluguel === a.idaluguel
-                      ? 'bg-blue-50 dark:bg-blue-900/30'
-                      : 'hover:bg-slate-50 dark:hover:bg-slate-700/30'
+                      ? 'bg-accent/10'
+                      : 'hover:bg-surface'
                   }`}
                 >
-                  {/* Status icons: meu lado + comp */}
                   <div className="flex flex-col gap-0.5 flex-shrink-0 mt-0.5">
                     {isPago(a)
-                      ? <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
-                      : <Clock className="w-3.5 h-3.5 text-amber-400" />
+                      ? <CheckCircle2 className="w-3.5 h-3.5 text-ledger-success" />
+                      : <Clock className="w-3.5 h-3.5 text-ledger-warning" />
                     }
                     {isPagoComp(a)
                       ? <CheckCircle2 className="w-3.5 h-3.5 text-purple-500" />
-                      : <Clock className="w-3.5 h-3.5 text-slate-300 dark:text-slate-600" />
+                      : <Clock className="w-3.5 h-3.5 text-ink-subtle opacity-40" />
                     }
                   </div>
 
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-slate-900 dark:text-white capitalize truncate">
+                    <p className="text-sm font-medium text-ink capitalize truncate">
                       {a.dataaluguel ? mesAnoShort(a.dataaluguel) : '—'}
                     </p>
-                    <p className="text-xs text-slate-400 dark:text-slate-500">
+                    <p className="text-xs text-ink-subtle">
                       {a.valoraluguel != null ? formatCurrency(a.valoraluguel) : 'sem valor'}
                     </p>
                   </div>
@@ -868,19 +840,19 @@ export function AlugueisPage() {
                     <div className="flex items-center gap-0.5 flex-shrink-0" onClick={e => e.stopPropagation()}>
                       {confirmDelete === a.idaluguel ? (
                         <>
-                          <button onClick={() => deleteMut.mutate(a.idaluguel)} className="p-1 text-red-500 hover:text-red-700" aria-label="Confirmar">
+                          <button onClick={() => deleteMut.mutate(a.idaluguel)} className="p-1 text-ledger-danger hover:opacity-80" aria-label="Confirmar">
                             <Check className="w-3.5 h-3.5" />
                           </button>
-                          <button onClick={() => setConfirmDelete(null)} className="p-1 text-slate-400 hover:text-slate-600" aria-label="Cancelar">
+                          <button onClick={() => setConfirmDelete(null)} className="p-1 text-ink-subtle hover:text-ink" aria-label="Cancelar">
                             <X className="w-3.5 h-3.5" />
                           </button>
                         </>
                       ) : (
                         <>
-                          <button onClick={() => { setEditando(a); setModal('editar'); }} className="p-1 text-slate-400 hover:text-blue-500 transition-colors" aria-label="Editar">
+                          <button onClick={() => { setEditando(a); setModal('editar'); }} className="p-1 text-ink-subtle hover:text-accent transition-colors" aria-label="Editar">
                             <Pencil className="w-3.5 h-3.5" />
                           </button>
-                          <button onClick={() => setConfirmDelete(a.idaluguel)} className="p-1 text-slate-400 hover:text-red-500 transition-colors" aria-label="Excluir">
+                          <button onClick={() => setConfirmDelete(a.idaluguel)} className="p-1 text-ink-subtle hover:text-ledger-danger transition-colors" aria-label="Excluir">
                             <Trash2 className="w-3.5 h-3.5" />
                           </button>
                         </>
@@ -894,15 +866,11 @@ export function AlugueisPage() {
         </div>
 
         {/* Painel de detalhes */}
-        <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-5">
+        <div className="bg-surface-raised rounded-xl border border-canvas-border p-5">
           {selecionado ? (
-            <DetalhesPanel
-              aluguel={selecionado}
-              isAdmin={isAdmin}
-              ano={ano}
-            />
+            <DetalhesPanel aluguel={selecionado} isAdmin={isAdmin} ano={ano} />
           ) : (
-            <div className="flex flex-col items-center justify-center h-48 text-slate-400 dark:text-slate-500 text-sm gap-2">
+            <div className="flex flex-col items-center justify-center h-48 text-ink-subtle text-sm gap-2">
               <Building2 className="w-8 h-8 opacity-30" />
               <p>Selecione um lançamento para ver os detalhes</p>
             </div>

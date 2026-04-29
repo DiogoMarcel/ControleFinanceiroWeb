@@ -49,8 +49,8 @@ function anoAtual() {
 }
 
 interface MesStats {
-  key: string;          // YYYY-MM
-  label: string;        // "Março / 2025"
+  key: string;
+  label: string;
   custo: number;
   litros: number;
   consumoMedio: number | null;
@@ -60,7 +60,6 @@ interface MesStats {
 function groupByMonth(abastecimentos: Abastecimento[]): MesStats[] {
   if (abastecimentos.length === 0) return [];
 
-  // Calcula consumo km/L por fill-up (pares consecutivos de km)
   const sorted = [...abastecimentos].sort((a, b) => a.kmcarro - b.kmcarro);
   const consumoPorId = new Map<number, number>();
   for (let i = 1; i < sorted.length; i++) {
@@ -70,13 +69,11 @@ function groupByMonth(abastecimentos: Abastecimento[]): MesStats[] {
     }
   }
 
-  // Agrupa por mês (ordem decrescente = lista desc por data)
   const mapaOrdem: string[] = [];
   const mapa = new Map<string, MesStats>();
 
-  // abastecimentos já vêm desc da API
   for (const a of abastecimentos) {
-    const key = a.dataabastecimento.slice(0, 7); // YYYY-MM
+    const key = a.dataabastecimento.slice(0, 7);
     if (!mapa.has(key)) {
       const [ano, mes] = key.split('-');
       const label = format(new Date(Number(ano), Number(mes) - 1, 1), "MMMM '/' yyyy", { locale: ptBR });
@@ -89,7 +86,6 @@ function groupByMonth(abastecimentos: Abastecimento[]): MesStats[] {
     entry.abastecimentos.push(a);
   }
 
-  // Calcula consumo médio por mês
   for (const stats of mapa.values()) {
     let total = 0;
     let count = 0;
@@ -108,10 +104,10 @@ function groupByMonth(abastecimentos: Abastecimento[]): MesStats[] {
 function Modal({ title, onClose, children }: { title: string; onClose: () => void; children: React.ReactNode }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-      <div className="bg-white dark:bg-slate-800 rounded-xl shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto">
-        <div className="flex items-center justify-between px-5 py-4 border-b border-slate-200 dark:border-slate-700">
-          <h2 className="text-base font-semibold text-slate-900 dark:text-white">{title}</h2>
-          <button onClick={onClose} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-xl leading-none">×</button>
+      <div className="bg-surface-raised rounded-xl shadow-sm w-full max-w-md max-h-[90vh] overflow-y-auto">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-canvas-border">
+          <h2 className="text-base font-semibold text-ink">{title}</h2>
+          <button onClick={onClose} className="text-ink-subtle hover:text-ink transition-colors text-xl leading-none">×</button>
         </div>
         <div className="p-5">{children}</div>
       </div>
@@ -147,7 +143,7 @@ function VeiculoForm({ initial, onSubmit, onCancel, loading }: VeiculoFormProps)
   );
   const [valorvenda, setValorvenda] = useState(String(initial?.valorvenda ?? ''));
 
-  const inputCls = 'w-full border border-slate-300 dark:border-slate-600 rounded-lg px-3 py-2 text-sm bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500';
+  const inputCls = 'w-full border border-canvas-border rounded-lg px-3 py-2 text-sm bg-surface-raised text-ink focus:outline-none focus:ring-2 focus:ring-accent/25 focus:border-accent/60 placeholder:text-ink-subtle';
 
   return (
     <form
@@ -156,44 +152,44 @@ function VeiculoForm({ initial, onSubmit, onCancel, loading }: VeiculoFormProps)
     >
       <div className="grid grid-cols-2 gap-3">
         <div>
-          <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Modelo *</label>
+          <label className="block text-xs font-medium text-ink-muted mb-1">Modelo *</label>
           <input required value={modelo} onChange={e => setModelo(e.target.value)} className={inputCls} />
         </div>
         <div>
-          <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Marca *</label>
+          <label className="block text-xs font-medium text-ink-muted mb-1">Marca *</label>
           <input required value={marca} onChange={e => setMarca(e.target.value)} className={inputCls} />
         </div>
       </div>
       <div>
-        <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Cor *</label>
+        <label className="block text-xs font-medium text-ink-muted mb-1">Cor *</label>
         <input required value={cor} onChange={e => setCor(e.target.value)} className={inputCls} />
       </div>
       <div className="grid grid-cols-2 gap-3">
         <div>
-          <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Data Compra *</label>
+          <label className="block text-xs font-medium text-ink-muted mb-1">Data Compra *</label>
           <input required type="date" value={datacompra} onChange={e => setDatacompra(e.target.value)} className={inputCls} />
         </div>
         <div>
-          <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Valor Compra *</label>
+          <label className="block text-xs font-medium text-ink-muted mb-1">Valor Compra *</label>
           <input required type="number" step="0.01" min="0" value={valorcompra} onChange={e => setValorcompra(e.target.value)} className={inputCls} placeholder="0,00" />
         </div>
       </div>
-      <p className="text-xs text-slate-400 dark:text-slate-500 font-medium">Venda (opcional)</p>
+      <p className="text-xs text-ink-subtle font-medium">Venda (opcional)</p>
       <div className="grid grid-cols-2 gap-3">
         <div>
-          <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Data Venda</label>
+          <label className="block text-xs font-medium text-ink-muted mb-1">Data Venda</label>
           <input type="date" value={datavenda} onChange={e => setDatavenda(e.target.value)} className={inputCls} />
         </div>
         <div>
-          <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Valor Venda</label>
+          <label className="block text-xs font-medium text-ink-muted mb-1">Valor Venda</label>
           <input type="number" step="0.01" min="0" value={valorvenda} onChange={e => setValorvenda(e.target.value)} className={inputCls} placeholder="0,00" />
         </div>
       </div>
       <div className="flex justify-end gap-2 pt-2">
-        <button type="button" onClick={onCancel} className="px-4 py-2 text-sm rounded-lg border border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors">
+        <button type="button" onClick={onCancel} className="px-4 py-2 text-sm rounded-lg border border-canvas-border text-ink-muted hover:bg-surface transition-colors">
           Cancelar
         </button>
-        <button type="submit" disabled={loading} className="px-4 py-2 text-sm rounded-lg bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 transition-colors">
+        <button type="submit" disabled={loading} className="px-4 py-2 text-sm rounded-lg bg-accent text-white hover:opacity-90 disabled:opacity-50 transition-colors">
           {loading ? 'Salvando…' : 'Salvar'}
         </button>
       </div>
@@ -226,7 +222,7 @@ function AbastForm({ initial, onSubmit, onCancel, loading }: AbastFormProps) {
   const [litros, setLitros] = useState(String(initial?.quantidadelitros ?? ''));
   const [obs, setObs] = useState(initial?.observacao?.trim() ?? '');
 
-  const inputCls = 'w-full border border-slate-300 dark:border-slate-600 rounded-lg px-3 py-2 text-sm bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500';
+  const inputCls = 'w-full border border-canvas-border rounded-lg px-3 py-2 text-sm bg-surface-raised text-ink focus:outline-none focus:ring-2 focus:ring-accent/25 focus:border-accent/60 placeholder:text-ink-subtle';
 
   return (
     <form
@@ -234,36 +230,50 @@ function AbastForm({ initial, onSubmit, onCancel, loading }: AbastFormProps) {
       className="space-y-4"
     >
       <div>
-        <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Data *</label>
+        <label className="block text-xs font-medium text-ink-muted mb-1">Data *</label>
         <input required type="date" value={data} onChange={e => setData(e.target.value)} className={inputCls} />
       </div>
       <div className="grid grid-cols-2 gap-3">
         <div>
-          <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Total (R$) *</label>
+          <label className="block text-xs font-medium text-ink-muted mb-1">Total (R$) *</label>
           <input required type="number" step="0.01" min="0" value={total} onChange={e => setTotal(e.target.value)} className={inputCls} placeholder="0,00" />
         </div>
         <div>
-          <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Litros *</label>
+          <label className="block text-xs font-medium text-ink-muted mb-1">Litros *</label>
           <input required type="number" step="0.001" min="0" value={litros} onChange={e => setLitros(e.target.value)} className={inputCls} placeholder="0,000" />
         </div>
       </div>
       <div>
-        <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">KM do carro *</label>
+        <label className="block text-xs font-medium text-ink-muted mb-1">KM do carro *</label>
         <input required type="number" min="0" value={km} onChange={e => setKm(e.target.value)} className={inputCls} placeholder="Ex: 52000" />
       </div>
       <div>
-        <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Observação</label>
+        <label className="block text-xs font-medium text-ink-muted mb-1">Observação</label>
         <input value={obs} onChange={e => setObs(e.target.value)} maxLength={80} className={inputCls} />
       </div>
       <div className="flex justify-end gap-2 pt-2">
-        <button type="button" onClick={onCancel} className="px-4 py-2 text-sm rounded-lg border border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors">
+        <button type="button" onClick={onCancel} className="px-4 py-2 text-sm rounded-lg border border-canvas-border text-ink-muted hover:bg-surface transition-colors">
           Cancelar
         </button>
-        <button type="submit" disabled={loading} className="px-4 py-2 text-sm rounded-lg bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 transition-colors">
+        <button type="submit" disabled={loading} className="px-4 py-2 text-sm rounded-lg bg-accent text-white hover:opacity-90 disabled:opacity-50 transition-colors">
           {loading ? 'Salvando…' : 'Salvar'}
         </button>
       </div>
     </form>
+  );
+}
+
+// ── Stat Card ─────────────────────────────────────────────────────────────
+
+function StatCard({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
+  return (
+    <div className="bg-surface rounded-xl border border-canvas-border px-2 py-2 sm:px-4 sm:py-3 flex flex-col gap-1">
+      <div className="flex items-center gap-1">
+        <span className="hidden sm:block">{icon}</span>
+        <span className="text-[10px] font-semibold uppercase tracking-[0.1em] text-ink-subtle leading-tight">{label}</span>
+      </div>
+      <span className="text-xs sm:text-[15px] font-semibold text-ink tabular-nums">{value}</span>
+    </div>
   );
 }
 
@@ -285,7 +295,6 @@ function AbastecimentosPanel({ veiculo, isAdmin }: { veiculo: Veiculo; isAdmin: 
       (await api.get(`/veiculos/${veiculo.idveiculo}/abastecimentos`, { params: { inicio, fim } })).data,
   });
 
-  // Totais gerais — todos os anos
   const { data: geral } = useQuery<AbastecimentosResponse>({
     queryKey: ['abastecimentos', veiculo.idveiculo, 'all'],
     queryFn: async () =>
@@ -333,10 +342,8 @@ function AbastecimentosPanel({ veiculo, isAdmin }: { veiculo: Veiculo; isAdmin: 
     }
   }
 
-  // Agrupa por mês (para lista e gráfico)
   const meses = groupByMonth(data?.abastecimentos ?? []);
 
-  // Gráfico: custo agregado por mês em ordem cronológica
   const chartData = [...meses]
     .sort((a, b) => a.key.localeCompare(b.key))
     .map(m => ({
@@ -349,29 +356,29 @@ function AbastecimentosPanel({ veiculo, isAdmin }: { veiculo: Veiculo; isAdmin: 
     (_, i) => String(new Date().getFullYear() - i),
   );
 
-  const inputCls = 'border border-slate-300 dark:border-slate-600 rounded-lg px-2 py-1 text-xs bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500';
+  const selectCls = 'border border-canvas-border rounded-lg px-2 py-1 text-xs bg-surface-raised text-ink focus:outline-none focus:ring-2 focus:ring-accent/25 focus:border-accent/60';
 
   return (
     <div className="flex flex-col gap-5">
       {/* Header do painel */}
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
-          <h3 className="text-sm font-semibold text-slate-900 dark:text-white">
+          <h3 className="text-sm font-semibold text-ink">
             {veiculo.modelo.trim()} — {veiculo.marca.trim()}
           </h3>
-          <p className="text-xs text-slate-400 dark:text-slate-500">
+          <p className="text-xs text-ink-subtle">
             {veiculo.cor.trim()} · comprado em {formatDate(veiculo.datacompra)}
             {veiculo.datavenda && ` · vendido em ${formatDate(veiculo.datavenda)}`}
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <select value={ano} onChange={e => setAno(e.target.value)} className={inputCls}>
+          <select value={ano} onChange={e => setAno(e.target.value)} className={selectCls}>
             {anos.map(a => <option key={a} value={a}>{a}</option>)}
           </select>
           {isAdmin && (
             <button
               onClick={() => setModalAbast('novo')}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-accent text-white rounded-lg hover:opacity-90 transition-colors"
             >
               <Plus className="w-3.5 h-3.5" /> Abastecer
             </button>
@@ -387,28 +394,28 @@ function AbastecimentosPanel({ veiculo, isAdmin }: { veiculo: Veiculo; isAdmin: 
         const kmTotal = Math.max(...geral.abastecimentos.map(a => a.kmcarro)) -
           Math.min(...geral.abastecimentos.map(a => a.kmcarro));
         return (
-          <div className="rounded-xl border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-900/20 px-4 py-3">
-            <p className="text-xs font-semibold text-blue-700 dark:text-blue-400 mb-2">
+          <div className="rounded-xl border border-canvas-border bg-surface px-4 py-3">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-ink-muted mb-2">
               Totais Gerais · desde {formatDate(primeiro.dataabastecimento)}
             </p>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               <div>
-                <p className="text-xs text-blue-500 dark:text-blue-400">Total investido</p>
-                <p className="text-sm font-semibold text-slate-900 dark:text-white">{formatCurrency(geral.custoTotal)}</p>
+                <p className="text-xs text-ink-subtle">Total investido</p>
+                <p className="text-sm font-semibold text-ink">{formatCurrency(geral.custoTotal)}</p>
               </div>
               <div>
-                <p className="text-xs text-blue-500 dark:text-blue-400">Total litros</p>
-                <p className="text-sm font-semibold text-slate-900 dark:text-white">{geral.totalLitros.toFixed(2)} L</p>
+                <p className="text-xs text-ink-subtle">Total litros</p>
+                <p className="text-sm font-semibold text-ink">{geral.totalLitros.toFixed(2)} L</p>
               </div>
               <div>
-                <p className="text-xs text-blue-500 dark:text-blue-400">Consumo médio</p>
-                <p className="text-sm font-semibold text-slate-900 dark:text-white">
+                <p className="text-xs text-ink-subtle">Consumo médio</p>
+                <p className="text-sm font-semibold text-ink">
                   {geral.consumoMedio != null ? `${geral.consumoMedio.toFixed(2)} km/L` : '—'}
                 </p>
               </div>
               <div>
-                <p className="text-xs text-blue-500 dark:text-blue-400">KM rodados</p>
-                <p className="text-sm font-semibold text-slate-900 dark:text-white">{kmTotal.toLocaleString('pt-BR')} km</p>
+                <p className="text-xs text-ink-subtle">KM rodados</p>
+                <p className="text-sm font-semibold text-ink">{kmTotal.toLocaleString('pt-BR')} km</p>
               </div>
             </div>
           </div>
@@ -419,15 +426,15 @@ function AbastecimentosPanel({ veiculo, isAdmin }: { veiculo: Veiculo; isAdmin: 
       {isLoading ? (
         <div className="grid grid-cols-3 gap-3">
           {Array.from({ length: 3 }).map((_, i) => (
-            <div key={i} className="h-16 bg-slate-100 dark:bg-slate-700/50 rounded-xl animate-pulse" />
+            <div key={i} className="h-16 bg-surface rounded-xl border border-canvas-border animate-pulse" />
           ))}
         </div>
       ) : (
         <div className="grid grid-cols-3 gap-3">
-          <StatCard icon={<DollarSign className="w-4 h-4 text-blue-500" />} label={`Custo ${ano}`} value={formatCurrency(data?.custoTotal ?? 0)} />
-          <StatCard icon={<Fuel className="w-4 h-4 text-green-500" />} label="Litros" value={`${(data?.totalLitros ?? 0).toFixed(2)} L`} />
+          <StatCard icon={<DollarSign className="w-4 h-4 text-accent" />} label={`Custo ${ano}`} value={formatCurrency(data?.custoTotal ?? 0)} />
+          <StatCard icon={<Fuel className="w-4 h-4 text-ledger-success" />} label="Litros" value={`${(data?.totalLitros ?? 0).toFixed(2)} L`} />
           <StatCard
-            icon={<Gauge className="w-4 h-4 text-amber-500" />}
+            icon={<Gauge className="w-4 h-4 text-ledger-warning" />}
             label="Consumo Médio"
             value={data?.consumoMedio != null ? `${data.consumoMedio.toFixed(2)} km/L` : '—'}
           />
@@ -436,63 +443,62 @@ function AbastecimentosPanel({ veiculo, isAdmin }: { veiculo: Veiculo; isAdmin: 
 
       {/* Gráfico — custo mensal */}
       {!isLoading && chartData.length > 0 && (
-        <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-4">
-          <p className="text-xs font-semibold text-slate-600 dark:text-slate-400 mb-3">Custo por Mês</p>
+        <div className="bg-surface-raised rounded-xl border border-canvas-border p-4">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-ink-muted mb-3">Custo por Mês</p>
           <ResponsiveContainer width="100%" height={160}>
             <BarChart data={chartData} margin={{ left: -10, right: 4 }} barCategoryGap="25%">
-              <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" vertical={false} />
-              <XAxis dataKey="mes" tick={{ fontSize: 11, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
+              <CartesianGrid strokeDasharray="3 3" stroke="oklch(90% 0.012 75)" vertical={false} />
+              <XAxis dataKey="mes" tick={{ fontSize: 11, fill: 'oklch(65% 0.015 255)', fontFamily: 'var(--font-sans)' }} axisLine={false} tickLine={false} />
               <YAxis
-                tick={{ fontSize: 10, fill: '#94a3b8' }}
+                tick={{ fontSize: 10, fill: 'oklch(65% 0.015 255)', fontFamily: 'var(--font-sans)' }}
                 axisLine={false}
                 tickLine={false}
                 tickFormatter={v => v >= 1000 ? `R$${(v / 1000).toFixed(0)}k` : `R$${v}`}
               />
               <Tooltip
                 formatter={(value) => [formatCurrency(Number(value)), 'Custo']}
-                contentStyle={{ borderRadius: 8, border: '1px solid #e2e8f0', fontSize: 12 }}
+                contentStyle={{ borderRadius: 8, border: '1px solid oklch(90% 0.012 75)', fontSize: 12, background: 'oklch(99.5% 0.005 75)', color: 'oklch(14% 0.02 255)' }}
               />
-              <Bar dataKey="custo" fill="#3b82f6" radius={[4, 4, 0, 0]} />
+              <Bar dataKey="custo" fill="oklch(68% 0.15 65)" radius={[4, 4, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </div>
       )}
 
       {/* Lista agrupada por mês */}
-      <div className="rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
+      <div className="rounded-xl border border-canvas-border overflow-hidden">
         {isLoading ? (
           Array.from({ length: 3 }).map((_, i) => (
-            <div key={i} className="px-4 py-3 flex gap-3 animate-pulse border-b border-slate-100 dark:border-slate-700">
+            <div key={i} className="px-4 py-3 flex gap-3 animate-pulse border-b border-canvas-border">
               <div className="flex-1 space-y-1.5">
-                <div className="h-3 bg-slate-200 dark:bg-slate-700 rounded w-1/3" />
-                <div className="h-3 bg-slate-200 dark:bg-slate-700 rounded w-1/2" />
+                <div className="h-3 bg-canvas-border rounded w-1/3" />
+                <div className="h-3 bg-canvas-border rounded w-1/2" />
               </div>
             </div>
           ))
         ) : !data?.abastecimentos.length ? (
-          <div className="px-4 py-8 text-center text-slate-400 dark:text-slate-500 text-sm">
+          <div className="px-4 py-8 text-center text-ink-subtle text-sm">
             Nenhum abastecimento em {ano}.
           </div>
         ) : (
           <ul>
             {meses.map(mes => (
               <li key={mes.key}>
-                {/* Registros do mês */}
                 {mes.abastecimentos.map(a => (
-                  <div key={a.idabastecimento} className="flex items-center gap-3 px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors border-b border-slate-100 dark:border-slate-700">
+                  <div key={a.idabastecimento} className="flex items-center gap-3 px-4 py-3 hover:bg-surface transition-colors border-b border-canvas-border">
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-3 flex-wrap">
-                        <span className="text-sm font-semibold text-slate-900 dark:text-white whitespace-nowrap">
+                        <span className="text-sm font-semibold text-ink whitespace-nowrap">
                           {formatCurrency(a.totalabastecimento)}
                         </span>
-                        <span className="text-xs text-slate-500 dark:text-slate-400 whitespace-nowrap">
+                        <span className="text-xs text-ink-muted whitespace-nowrap">
                           {a.quantidadelitros.toFixed(3)} L · {a.kmcarro.toLocaleString('pt-BR')} km
                         </span>
                       </div>
                       <div className="flex items-center gap-3 mt-0.5">
-                        <span className="text-xs text-slate-400 dark:text-slate-500">{formatDate(a.dataabastecimento)}</span>
+                        <span className="text-xs text-ink-subtle">{formatDate(a.dataabastecimento)}</span>
                         {a.observacao && (
-                          <span className="text-xs text-slate-400 dark:text-slate-500 truncate">{a.observacao.trim()}</span>
+                          <span className="text-xs text-ink-subtle truncate">{a.observacao.trim()}</span>
                         )}
                       </div>
                     </div>
@@ -500,10 +506,10 @@ function AbastecimentosPanel({ veiculo, isAdmin }: { veiculo: Veiculo; isAdmin: 
                       <div className="flex items-center gap-1 flex-shrink-0">
                         {confirmDelete === a.idabastecimento ? (
                           <>
-                            <button onClick={() => deleteMut.mutate(a.idabastecimento)} disabled={deleteMut.isPending} className="p-1 text-red-500 hover:text-red-700 transition-colors" aria-label="Confirmar exclusão">
+                            <button onClick={() => deleteMut.mutate(a.idabastecimento)} disabled={deleteMut.isPending} className="p-1 text-ledger-danger hover:opacity-80 transition-colors" aria-label="Confirmar exclusão">
                               <Check className="w-4 h-4" />
                             </button>
-                            <button onClick={() => setConfirmDelete(null)} className="p-1 text-slate-400 hover:text-slate-600 transition-colors" aria-label="Cancelar">
+                            <button onClick={() => setConfirmDelete(null)} className="p-1 text-ink-subtle hover:text-ink transition-colors" aria-label="Cancelar">
                               <X className="w-4 h-4" />
                             </button>
                           </>
@@ -511,14 +517,14 @@ function AbastecimentosPanel({ veiculo, isAdmin }: { veiculo: Veiculo; isAdmin: 
                           <>
                             <button
                               onClick={() => { setEditando(a); setModalAbast('editar'); }}
-                              className="p-1 text-slate-300 hover:text-blue-500 dark:text-slate-600 dark:hover:text-blue-400 transition-colors"
+                              className="p-1 text-ink-subtle hover:text-accent transition-colors"
                               aria-label="Editar abastecimento"
                             >
                               <Pencil className="w-3.5 h-3.5" />
                             </button>
                             <button
                               onClick={() => setConfirmDelete(a.idabastecimento)}
-                              className="p-1 text-slate-300 hover:text-red-500 dark:text-slate-600 dark:hover:text-red-400 transition-colors"
+                              className="p-1 text-ink-subtle hover:text-ledger-danger transition-colors"
                               aria-label="Excluir abastecimento"
                             >
                               <Trash2 className="w-3.5 h-3.5" />
@@ -530,12 +536,12 @@ function AbastecimentosPanel({ veiculo, isAdmin }: { veiculo: Veiculo; isAdmin: 
                   </div>
                 ))}
                 {/* Subtotal do mês */}
-                <div className="flex items-center gap-4 px-4 py-2 bg-slate-50 dark:bg-slate-700/40 border-b border-slate-200 dark:border-slate-700 flex-wrap">
-                  <span className="text-xs font-semibold text-slate-600 dark:text-slate-300 capitalize">{mes.label}</span>
-                  <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">{formatCurrency(mes.custo)}</span>
-                  <span className="text-xs text-slate-400 dark:text-slate-500">{mes.litros.toFixed(3)} L</span>
+                <div className="flex items-center gap-4 px-4 py-2 bg-surface border-b border-canvas-border flex-wrap">
+                  <span className="text-xs font-semibold text-ink-muted capitalize">{mes.label}</span>
+                  <span className="text-xs text-ink-muted font-medium">{formatCurrency(mes.custo)}</span>
+                  <span className="text-xs text-ink-subtle">{mes.litros.toFixed(3)} L</span>
                   {mes.consumoMedio != null && (
-                    <span className="text-xs text-slate-400 dark:text-slate-500">{mes.consumoMedio.toFixed(2)} km/L</span>
+                    <span className="text-xs text-ink-subtle">{mes.consumoMedio.toFixed(2)} km/L</span>
                   )}
                 </div>
               </li>
@@ -564,20 +570,6 @@ function AbastecimentosPanel({ veiculo, isAdmin }: { veiculo: Veiculo; isAdmin: 
           />
         </Modal>
       )}
-    </div>
-  );
-}
-
-// ── Stat Card ─────────────────────────────────────────────────────────────
-
-function StatCard({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
-  return (
-    <div className="bg-slate-50 dark:bg-slate-700/50 rounded-xl px-2 py-2 sm:px-4 sm:py-3 flex flex-col gap-1">
-      <div className="flex items-center gap-1">
-        <span className="hidden sm:block">{icon}</span>
-        <span className="text-xs text-slate-500 dark:text-slate-400 leading-tight">{label}</span>
-      </div>
-      <span className="text-xs sm:text-sm font-semibold text-slate-900 dark:text-white tabular-nums">{value}</span>
     </div>
   );
 }
@@ -643,13 +635,13 @@ export function VeiculosPage() {
     <div className="max-w-6xl mx-auto px-4 py-6">
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
-          <Car className="w-6 h-6 text-blue-600" />
-          <h1 className="text-xl font-semibold text-slate-900 dark:text-white">Veículos</h1>
+          <Car className="w-6 h-6 text-accent" />
+          <h1 className="text-xl font-semibold text-ink">Veículos</h1>
         </div>
         {isAdmin && (
           <button
             onClick={() => { setEditando(null); setModal('novo'); }}
-            className="flex items-center gap-2 px-4 py-2 text-sm font-medium bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            className="flex items-center gap-2 px-4 py-2 text-sm font-medium bg-accent text-white rounded-lg hover:opacity-90 transition-colors"
           >
             <Plus className="w-4 h-4" /> Novo Veículo
           </button>
@@ -658,43 +650,43 @@ export function VeiculosPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-6">
         {/* Lista de veículos */}
-        <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden self-start">
+        <div className="bg-surface-raised rounded-xl border border-canvas-border overflow-hidden self-start">
           {isLoading ? (
-            <div className="divide-y divide-slate-100 dark:divide-slate-700">
+            <div className="divide-y divide-canvas-border">
               {Array.from({ length: 3 }).map((_, i) => (
                 <div key={i} className="px-4 py-4 animate-pulse space-y-1.5">
-                  <div className="h-3 bg-slate-200 dark:bg-slate-700 rounded w-2/3" />
-                  <div className="h-3 bg-slate-200 dark:bg-slate-700 rounded w-1/3" />
+                  <div className="h-3 bg-canvas-border rounded w-2/3" />
+                  <div className="h-3 bg-canvas-border rounded w-1/3" />
                 </div>
               ))}
             </div>
           ) : veiculos.length === 0 ? (
-            <div className="px-4 py-8 text-center text-slate-400 dark:text-slate-500 text-sm">
+            <div className="px-4 py-8 text-center text-ink-subtle text-sm">
               Nenhum veículo cadastrado.
             </div>
           ) : (
-            <ul className="divide-y divide-slate-100 dark:divide-slate-700">
+            <ul className="divide-y divide-canvas-border">
               {veiculos.map(v => (
                 <li
                   key={v.idveiculo}
                   className={`flex items-center gap-3 px-4 py-3 cursor-pointer transition-colors ${
                     selecionado?.idveiculo === v.idveiculo
-                      ? 'bg-blue-50 dark:bg-blue-900/30'
-                      : 'hover:bg-slate-50 dark:hover:bg-slate-700/30'
+                      ? 'bg-accent/10'
+                      : 'hover:bg-surface'
                   }`}
                   onClick={() => setSelecionado(v)}
                 >
-                  <div className="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900/50 flex items-center justify-center flex-shrink-0">
-                    <Car className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                  <div className="w-8 h-8 rounded-full bg-accent/10 flex items-center justify-center flex-shrink-0">
+                    <Car className="w-4 h-4 text-accent" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-slate-900 dark:text-white truncate">
+                    <p className="text-sm font-medium text-ink truncate">
                       {v.modelo.trim()}
                       {v.datavenda && (
-                        <span className="ml-1.5 text-xs font-normal text-slate-400 dark:text-slate-500">vendido</span>
+                        <span className="ml-1.5 text-xs font-normal text-ink-subtle">vendido</span>
                       )}
                     </p>
-                    <p className="text-xs text-slate-400 dark:text-slate-500 truncate">
+                    <p className="text-xs text-ink-subtle truncate">
                       {v.marca.trim()} · {v.cor.trim()}
                     </p>
                   </div>
@@ -702,10 +694,10 @@ export function VeiculosPage() {
                     <div className="flex items-center gap-1 flex-shrink-0" onClick={e => e.stopPropagation()}>
                       {confirmDelete === v.idveiculo ? (
                         <>
-                          <button onClick={() => deleteMut.mutate(v.idveiculo)} className="p-1 text-red-500 hover:text-red-700" aria-label="Confirmar">
+                          <button onClick={() => deleteMut.mutate(v.idveiculo)} className="p-1 text-ledger-danger hover:opacity-80" aria-label="Confirmar">
                             <Check className="w-3.5 h-3.5" />
                           </button>
-                          <button onClick={() => setConfirmDelete(null)} className="p-1 text-slate-400 hover:text-slate-600" aria-label="Cancelar">
+                          <button onClick={() => setConfirmDelete(null)} className="p-1 text-ink-subtle hover:text-ink" aria-label="Cancelar">
                             <X className="w-3.5 h-3.5" />
                           </button>
                         </>
@@ -713,14 +705,14 @@ export function VeiculosPage() {
                         <>
                           <button
                             onClick={() => { setEditando(v); setModal('editar'); }}
-                            className="p-1 text-slate-400 hover:text-blue-500 transition-colors"
+                            className="p-1 text-ink-subtle hover:text-accent transition-colors"
                             aria-label="Editar veículo"
                           >
                             <Pencil className="w-3.5 h-3.5" />
                           </button>
                           <button
                             onClick={() => setConfirmDelete(v.idveiculo)}
-                            className="p-1 text-slate-400 hover:text-red-500 transition-colors"
+                            className="p-1 text-ink-subtle hover:text-ledger-danger transition-colors"
                             aria-label="Excluir veículo"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
@@ -736,11 +728,11 @@ export function VeiculosPage() {
         </div>
 
         {/* Painel de abastecimentos */}
-        <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-5">
+        <div className="bg-surface-raised rounded-xl border border-canvas-border p-5">
           {selecionado ? (
             <AbastecimentosPanel veiculo={selecionado} isAdmin={isAdmin} />
           ) : (
-            <div className="flex flex-col items-center justify-center h-48 text-slate-400 dark:text-slate-500 text-sm gap-2">
+            <div className="flex flex-col items-center justify-center h-48 text-ink-subtle text-sm gap-2">
               <Car className="w-8 h-8 opacity-30" />
               <p>Selecione um veículo para ver os abastecimentos</p>
             </div>

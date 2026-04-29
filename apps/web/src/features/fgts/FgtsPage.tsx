@@ -22,10 +22,10 @@ interface RegistroFgts {
 function Modal({ title, onClose, children }: { title: string; onClose: () => void; children: React.ReactNode }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-      <div className="bg-white dark:bg-slate-800 rounded-xl shadow-xl w-full max-w-md">
-        <div className="flex items-center justify-between px-5 py-4 border-b border-slate-200 dark:border-slate-700">
-          <h2 className="text-base font-semibold text-slate-900 dark:text-white">{title}</h2>
-          <button onClick={onClose} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-xl leading-none">×</button>
+      <div className="bg-surface-raised rounded-xl shadow-sm w-full max-w-md">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-canvas-border">
+          <h2 className="text-base font-semibold text-ink">{title}</h2>
+          <button onClick={onClose} className="text-ink-subtle hover:text-ink transition-colors text-xl leading-none">×</button>
         </div>
         <div className="p-5">{children}</div>
       </div>
@@ -49,7 +49,7 @@ function FgtsForm({ initial, membros, onSubmit, onCancel, loading }: FgtsFormPro
   const [idMembro, setIdMembro] = useState(String(initial?.id_membrofamilia ?? ''));
   const [senha, setSenha] = useState('');
 
-  const inputCls = 'w-full border border-slate-300 dark:border-slate-600 rounded-lg px-3 py-2 text-sm bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500';
+  const inputCls = 'w-full border border-canvas-border rounded-lg px-3 py-2 text-sm bg-surface-raised text-ink focus:outline-none focus:ring-2 focus:ring-accent/25 focus:border-accent/60 placeholder:text-ink-subtle';
 
   return (
     <form
@@ -57,24 +57,24 @@ function FgtsForm({ initial, membros, onSubmit, onCancel, loading }: FgtsFormPro
       className="space-y-4"
     >
       <div>
-        <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Nº OPI *</label>
+        <label className="block text-xs font-medium text-ink-muted mb-1">Nº OPI *</label>
         <input required value={nropis} onChange={e => setNropis(e.target.value)} maxLength={15} className={inputCls} placeholder="Ex: 00112233" />
       </div>
       <div>
-        <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Membro</label>
+        <label className="block text-xs font-medium text-ink-muted mb-1">Membro</label>
         <select value={idMembro} onChange={e => setIdMembro(e.target.value)} className={inputCls}>
           <option value="">Selecione…</option>
           {membros.map(m => <option key={m.idmembrofamilia} value={m.idmembrofamilia}>{m.nome}</option>)}
         </select>
       </div>
       <div>
-        <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Saldo atual (R$)</label>
+        <label className="block text-xs font-medium text-ink-muted mb-1">Saldo atual (R$)</label>
         <input type="number" step="0.01" min="0" value={saldo} onChange={e => setSaldo(e.target.value)} className={inputCls} placeholder="0,00" />
       </div>
       <div>
-        <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
+        <label className="block text-xs font-medium text-ink-muted mb-1">
           Senha / PIN
-          {initial && <span className="ml-1.5 text-slate-400 font-normal">(deixe em branco para não alterar)</span>}
+          {initial && <span className="ml-1.5 text-ink-subtle font-normal">(deixe em branco para não alterar)</span>}
         </label>
         <input
           type="password"
@@ -85,13 +85,13 @@ function FgtsForm({ initial, membros, onSubmit, onCancel, loading }: FgtsFormPro
           placeholder={initial ? '••••••' : 'Opcional'}
           autoComplete="new-password"
         />
-        <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">Armazenada de forma segura. Nunca exposta pela API.</p>
+        <p className="text-xs text-ink-subtle mt-1">Armazenada de forma segura. Nunca exposta pela API.</p>
       </div>
       <div className="flex justify-end gap-2 pt-2">
-        <button type="button" onClick={onCancel} className="px-4 py-2 text-sm rounded-lg border border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors">
+        <button type="button" onClick={onCancel} className="px-4 py-2 text-sm rounded-lg border border-canvas-border text-ink-muted hover:bg-surface transition-colors">
           Cancelar
         </button>
-        <button type="submit" disabled={loading} className="px-4 py-2 text-sm rounded-lg bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 transition-colors">
+        <button type="submit" disabled={loading} className="px-4 py-2 text-sm rounded-lg bg-accent text-white hover:opacity-90 disabled:opacity-50 transition-colors">
           {loading ? 'Salvando…' : 'Salvar'}
         </button>
       </div>
@@ -156,13 +156,13 @@ export function FgtsPage() {
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
-          <Briefcase className="w-6 h-6 text-blue-600" />
-          <h1 className="text-xl font-semibold text-slate-900 dark:text-white">FGTS</h1>
+          <Briefcase className="w-6 h-6 text-accent" />
+          <h1 className="text-xl font-semibold text-ink">FGTS</h1>
         </div>
         {isAdmin && (
           <button
             onClick={() => { setEditando(null); setModal('novo'); }}
-            className="flex items-center gap-2 px-4 py-2 text-sm font-medium bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            className="flex items-center gap-2 px-4 py-2 text-sm font-medium bg-accent text-white rounded-lg hover:opacity-90 transition-colors"
           >
             <Plus className="w-4 h-4" /> Novo Registro
           </button>
@@ -171,51 +171,51 @@ export function FgtsPage() {
 
       {/* Total */}
       {!isLoading && registros.length > 0 && (
-        <div className="mb-5 rounded-xl border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-900/20 px-5 py-4 flex items-center justify-between">
+        <div className="mb-5 rounded-xl border border-canvas-border bg-surface-raised px-5 py-4 flex items-center justify-between">
           <div>
-            <p className="text-xs text-blue-500 dark:text-blue-400 font-medium">Total FGTS</p>
-            <p className="text-xl font-bold text-slate-900 dark:text-white mt-0.5">{formatCurrency(totalFgts)}</p>
+            <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-ink-subtle">Total FGTS</p>
+            <p className="text-[17px] font-bold text-ledger-success tabular-nums mt-0.5">{formatCurrency(totalFgts)}</p>
           </div>
-          <Briefcase className="w-8 h-8 text-blue-300 dark:text-blue-700" />
+          <Briefcase className="w-8 h-8 text-ink-subtle opacity-30" />
         </div>
       )}
 
       {/* Lista */}
-      <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
+      <div className="bg-surface-raised rounded-xl border border-canvas-border overflow-hidden">
         {isLoading ? (
-          <div className="divide-y divide-slate-100 dark:divide-slate-700">
+          <div className="divide-y divide-canvas-border">
             {Array.from({ length: 2 }).map((_, i) => (
               <div key={i} className="px-5 py-4 animate-pulse space-y-2">
-                <div className="h-3 bg-slate-200 dark:bg-slate-700 rounded w-1/3" />
-                <div className="h-3 bg-slate-200 dark:bg-slate-700 rounded w-1/2" />
+                <div className="h-3 bg-canvas-border rounded w-1/3" />
+                <div className="h-3 bg-canvas-border rounded w-1/2" />
               </div>
             ))}
           </div>
         ) : registros.length === 0 ? (
-          <div className="px-5 py-10 text-center text-slate-400 dark:text-slate-500 text-sm">
+          <div className="px-5 py-10 text-center text-ink-subtle text-sm">
             Nenhum registro de FGTS cadastrado.
           </div>
         ) : (
-          <ul className="divide-y divide-slate-100 dark:divide-slate-700">
+          <ul className="divide-y divide-canvas-border">
             {registros.map(r => (
-              <li key={r.idsaldofgts} className="flex items-center gap-4 px-5 py-4 hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors">
+              <li key={r.idsaldofgts} className="flex items-center gap-4 px-5 py-4 hover:bg-surface transition-colors">
                 {/* Ícone */}
-                <div className="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/40 flex items-center justify-center flex-shrink-0">
-                  <Briefcase className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                <div className="w-10 h-10 rounded-full bg-accent/10 flex items-center justify-center flex-shrink-0">
+                  <Briefcase className="w-5 h-5 text-accent" />
                 </div>
 
                 {/* Info */}
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <span className="text-sm font-semibold text-slate-900 dark:text-white">
+                    <span className="text-[15px] font-semibold tabular-nums text-ink">
                       {formatCurrency(r.saldo ?? 0)}
                     </span>
-                    <span className="text-xs px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 font-mono">
+                    <span className="text-xs px-2 py-0.5 rounded-full bg-surface border border-canvas-border text-ink-muted font-mono">
                       {r.nropis.trim()}
                     </span>
                   </div>
                   {r.membrofamilia && (
-                    <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">{r.membrofamilia.nome}</p>
+                    <p className="text-[11px] text-ink-subtle mt-0.5">{r.membrofamilia.nome}</p>
                   )}
                 </div>
 
@@ -224,10 +224,10 @@ export function FgtsPage() {
                   <div className="flex items-center gap-1 flex-shrink-0">
                     {confirmDelete === r.idsaldofgts ? (
                       <>
-                        <button onClick={() => deleteMut.mutate(r.idsaldofgts)} disabled={deleteMut.isPending} className="p-1.5 text-red-500 hover:text-red-700 transition-colors" aria-label="Confirmar exclusão">
+                        <button onClick={() => deleteMut.mutate(r.idsaldofgts)} disabled={deleteMut.isPending} className="p-1.5 text-ledger-danger hover:opacity-80 transition-colors" aria-label="Confirmar exclusão">
                           <Check className="w-4 h-4" />
                         </button>
-                        <button onClick={() => setConfirmDelete(null)} className="p-1.5 text-slate-400 hover:text-slate-600 transition-colors" aria-label="Cancelar">
+                        <button onClick={() => setConfirmDelete(null)} className="p-1.5 text-ink-subtle hover:text-ink transition-colors" aria-label="Cancelar">
                           <X className="w-4 h-4" />
                         </button>
                       </>
@@ -235,14 +235,14 @@ export function FgtsPage() {
                       <>
                         <button
                           onClick={() => { setEditando(r); setModal('editar'); }}
-                          className="p-1.5 text-slate-400 hover:text-blue-500 dark:hover:text-blue-400 transition-colors"
+                          className="p-1.5 text-ink-subtle hover:text-accent hover:bg-accent/10 rounded-lg transition-colors"
                           aria-label="Editar"
                         >
                           <Pencil className="w-4 h-4" />
                         </button>
                         <button
                           onClick={() => setConfirmDelete(r.idsaldofgts)}
-                          className="p-1.5 text-slate-400 hover:text-red-500 dark:hover:text-red-400 transition-colors"
+                          className="p-1.5 text-ink-subtle hover:text-ledger-danger hover:bg-ledger-danger/10 rounded-lg transition-colors"
                           aria-label="Excluir"
                         >
                           <Trash2 className="w-4 h-4" />

@@ -89,21 +89,21 @@ function CartaoForm({ initial, membros, onSubmit, onCancel, loading }: CartaoFor
     });
   }
 
-  const inputCls = 'w-full border border-slate-300 dark:border-slate-600 rounded-lg px-3 py-2 text-sm bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500';
+  const inputCls = 'w-full border border-canvas-border rounded-lg px-3 py-2 text-sm bg-surface-raised text-ink focus:outline-none focus:ring-2 focus:ring-accent/25 focus:border-accent/60';
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div>
-        <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Nome *</label>
+        <label className="block text-xs font-medium text-ink-muted mb-1">Nome *</label>
         <input required value={nome} onChange={e => setNome(e.target.value)} className={inputCls} />
       </div>
       <div className="grid grid-cols-2 gap-3">
         <div>
-          <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Dia Vencimento</label>
+          <label className="block text-xs font-medium text-ink-muted mb-1">Dia Vencimento</label>
           <input type="number" min={1} max={31} value={diavencimento} onChange={e => setDiavencimento(e.target.value)} className={inputCls} placeholder="Ex: 15" />
         </div>
         <div>
-          <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Bandeira</label>
+          <label className="block text-xs font-medium text-ink-muted mb-1">Bandeira</label>
           <select value={bandeira} onChange={e => setBandeira(e.target.value)} className={inputCls}>
             <option value="">—</option>
             <option>Visa</option>
@@ -115,17 +115,17 @@ function CartaoForm({ initial, membros, onSubmit, onCancel, loading }: CartaoFor
         </div>
       </div>
       <div>
-        <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Membro</label>
+        <label className="block text-xs font-medium text-ink-muted mb-1">Membro</label>
         <select value={id_membrofamilia} onChange={e => setIdMembro(e.target.value)} className={inputCls}>
           <option value="">Compartilhado</option>
           {membros.map(m => <option key={m.idmembrofamilia} value={m.idmembrofamilia}>{m.nome}</option>)}
         </select>
       </div>
       <div className="flex justify-end gap-2 pt-2">
-        <button type="button" onClick={onCancel} className="px-4 py-2 text-sm rounded-lg border border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors">
+        <button type="button" onClick={onCancel} className="px-4 py-2 text-sm rounded-lg border border-canvas-border text-ink-muted hover:bg-surface transition-colors">
           Cancelar
         </button>
-        <button type="submit" disabled={loading} className="px-4 py-2 text-sm rounded-lg bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 transition-colors">
+        <button type="submit" disabled={loading} className="px-4 py-2 text-sm rounded-lg bg-accent text-white hover:opacity-90 disabled:opacity-50 transition-colors">
           {loading ? 'Salvando…' : 'Salvar'}
         </button>
       </div>
@@ -138,10 +138,10 @@ function CartaoForm({ initial, membros, onSubmit, onCancel, loading }: CartaoFor
 function Modal({ title, onClose, children }: { title: string; onClose: () => void; children: React.ReactNode }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-      <div className="bg-white dark:bg-slate-800 rounded-xl shadow-xl w-full max-w-md">
-        <div className="flex items-center justify-between px-5 py-4 border-b border-slate-200 dark:border-slate-700">
-          <h2 className="text-base font-semibold text-slate-900 dark:text-white">{title}</h2>
-          <button onClick={onClose} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-xl leading-none">×</button>
+      <div className="bg-surface-raised rounded-xl shadow-sm w-full max-w-md">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-canvas-border">
+          <h2 className="text-base font-semibold text-ink">{title}</h2>
+          <button onClick={onClose} className="text-ink-subtle hover:text-ink text-xl leading-none">×</button>
         </div>
         <div className="p-5">{children}</div>
       </div>
@@ -178,30 +178,30 @@ function DespesaForm({ idcartao, mes, onDone }: { idcartao: number; mes: string;
     mutation.mutate({ descricao, valor: Number(valor.replace(',', '.')), data });
   }
 
-  const inputCls = 'w-full border border-slate-300 dark:border-slate-600 rounded-lg px-3 py-2 text-sm bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500';
+  const inputCls = 'w-full border border-canvas-border rounded-lg px-3 py-2 text-sm bg-surface-raised text-ink focus:outline-none focus:ring-2 focus:ring-accent/25 focus:border-accent/60';
 
   return (
     <form onSubmit={handleSubmit} className="space-y-3">
       <div>
-        <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Descrição *</label>
+        <label className="block text-xs font-medium text-ink-muted mb-1">Descrição *</label>
         <input required value={descricao} onChange={e => setDescricao(e.target.value)} maxLength={30} className={inputCls} />
       </div>
       <div className="grid grid-cols-2 gap-3">
         <div>
-          <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Valor (R$) *</label>
+          <label className="block text-xs font-medium text-ink-muted mb-1">Valor (R$) *</label>
           <input required value={valor} onChange={e => setValor(e.target.value)} inputMode="decimal" className={inputCls} placeholder="0,00" />
         </div>
         <div>
-          <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Data</label>
+          <label className="block text-xs font-medium text-ink-muted mb-1">Data</label>
           <input type="date" value={data} onChange={e => setData(e.target.value)} className={inputCls} />
         </div>
       </div>
-      {erro && <p className="text-xs text-red-500">{erro}</p>}
+      {erro && <p className="text-xs text-ledger-danger">{erro}</p>}
       <div className="flex justify-end gap-2 pt-1">
-        <button type="button" onClick={onDone} className="px-4 py-2 text-sm rounded-lg border border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors">
+        <button type="button" onClick={onDone} className="px-4 py-2 text-sm rounded-lg border border-canvas-border text-ink-muted hover:bg-surface transition-colors">
           Cancelar
         </button>
-        <button type="submit" disabled={mutation.isPending} className="px-4 py-2 text-sm rounded-lg bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 transition-colors">
+        <button type="submit" disabled={mutation.isPending} className="px-4 py-2 text-sm rounded-lg bg-accent text-white hover:opacity-90 disabled:opacity-50 transition-colors">
           {mutation.isPending ? 'Salvando…' : 'Lançar'}
         </button>
       </div>
@@ -242,19 +242,19 @@ function DespesasPanel({ cartao }: { cartao: Cartao }) {
       {/* Cabeçalho do painel */}
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
-          <button onClick={() => navMes(-1)} className="p-1 rounded hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
-            <ChevronLeft className="w-4 h-4 text-slate-500" />
+          <button onClick={() => navMes(-1)} className="p-1 rounded hover:bg-surface transition-colors">
+            <ChevronLeft className="w-4 h-4 text-ink-muted" />
           </button>
-          <span className="text-sm font-medium text-slate-700 dark:text-slate-300 capitalize w-36 text-center">
+          <span className="text-sm font-medium text-ink capitalize w-36 text-center">
             {mesLabel(mesAtual)}
           </span>
-          <button onClick={() => navMes(1)} className="p-1 rounded hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
-            <ChevronRight className="w-4 h-4 text-slate-500" />
+          <button onClick={() => navMes(1)} className="p-1 rounded hover:bg-surface transition-colors">
+            <ChevronRight className="w-4 h-4 text-ink-muted" />
           </button>
         </div>
         <button
           onClick={() => setShowForm(true)}
-          className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+          className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-accent text-white rounded-lg hover:opacity-90 transition-colors"
         >
           <Plus className="w-3.5 h-3.5" /> Lançar
         </button>
@@ -262,40 +262,40 @@ function DespesasPanel({ cartao }: { cartao: Cartao }) {
 
       {/* Total */}
       {data && (
-        <div className="mb-3 px-3 py-2 bg-slate-50 dark:bg-slate-700/50 rounded-lg flex justify-between items-center">
-          <span className="text-xs text-slate-500 dark:text-slate-400">Total do mês</span>
-          <span className="text-sm font-semibold text-slate-900 dark:text-white">
+        <div className="mb-3 px-3 py-2 bg-surface rounded-lg flex justify-between items-center">
+          <span className="text-xs text-ink-muted">Total do mês</span>
+          <span className="text-sm font-semibold text-ink">
             {formatCurrency(data.total)}
           </span>
         </div>
       )}
 
       {/* Lista */}
-      <div className="flex-1 overflow-y-auto divide-y divide-slate-100 dark:divide-slate-700 rounded-lg border border-slate-200 dark:border-slate-700">
+      <div className="flex-1 overflow-y-auto divide-y divide-canvas-border rounded-lg border border-canvas-border">
         {isLoading ? (
           Array.from({ length: 4 }).map((_, i) => (
             <div key={i} className="px-4 py-3 flex gap-3 animate-pulse">
               <div className="flex-1 space-y-1.5">
-                <div className="h-3 bg-slate-200 dark:bg-slate-700 rounded w-1/2" />
-                <div className="h-3 bg-slate-200 dark:bg-slate-700 rounded w-1/4" />
+                <div className="h-3 bg-canvas-border rounded w-1/2" />
+                <div className="h-3 bg-canvas-border rounded w-1/4" />
               </div>
-              <div className="h-4 bg-slate-200 dark:bg-slate-700 rounded w-20" />
+              <div className="h-4 bg-canvas-border rounded w-20" />
             </div>
           ))
         ) : !data?.despesas.length ? (
-          <div className="px-4 py-8 text-center text-slate-400 dark:text-slate-500 text-sm">
+          <div className="px-4 py-8 text-center text-ink-subtle text-sm">
             Nenhuma despesa neste mês.
           </div>
         ) : (
           data.despesas.map(d => (
-            <div key={d.iddespesacartao} className="px-4 py-3 flex items-center gap-3 hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors">
+            <div key={d.iddespesacartao} className="px-4 py-3 flex items-center gap-3 hover:bg-surface transition-colors">
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-slate-900 dark:text-white truncate">{d.descricao}</p>
+                <p className="text-sm font-medium text-ink truncate">{d.descricao}</p>
                 {d.datadespesa && (
-                  <p className="text-xs text-slate-400 dark:text-slate-500">{formatDate(d.datadespesa)}</p>
+                  <p className="text-xs text-ink-subtle">{formatDate(d.datadespesa)}</p>
                 )}
               </div>
-              <span className="text-sm font-semibold text-slate-700 dark:text-slate-300 whitespace-nowrap">
+              <span className="text-sm font-semibold text-ink whitespace-nowrap">
                 {formatCurrency(d.valor ?? 0)}
               </span>
               {confirmDelete === d.iddespesacartao ? (
@@ -303,14 +303,14 @@ function DespesasPanel({ cartao }: { cartao: Cartao }) {
                   <button
                     onClick={() => deleteMut.mutate(d.iddespesacartao)}
                     disabled={deleteMut.isPending}
-                    className="p-1 text-red-500 hover:text-red-700 transition-colors"
+                    className="p-1 text-ledger-danger hover:opacity-80 transition-colors"
                     aria-label="Confirmar exclusão"
                   >
                     <Check className="w-4 h-4" />
                   </button>
                   <button
                     onClick={() => setConfirmDelete(null)}
-                    className="p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors"
+                    className="p-1 text-ink-subtle hover:text-ink transition-colors"
                     aria-label="Cancelar"
                   >
                     <X className="w-4 h-4" />
@@ -319,7 +319,7 @@ function DespesasPanel({ cartao }: { cartao: Cartao }) {
               ) : (
                 <button
                   onClick={() => setConfirmDelete(d.iddespesacartao)}
-                  className="p-1 text-slate-300 hover:text-red-500 dark:text-slate-600 dark:hover:text-red-400 transition-colors"
+                  className="p-1 text-ink-subtle hover:text-ledger-danger transition-colors"
                   aria-label="Excluir despesa"
                 >
                   <Trash2 className="w-4 h-4" />
@@ -381,13 +381,13 @@ export function CartoesPage() {
     <div className="max-w-6xl mx-auto px-4 py-6">
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
-          <CreditCard className="w-6 h-6 text-blue-600" />
-          <h1 className="text-xl font-semibold text-slate-900 dark:text-white">Cartões</h1>
+          <CreditCard className="w-6 h-6 text-accent" />
+          <h1 className="text-xl font-semibold text-ink">Cartões</h1>
         </div>
         {isAdmin && (
           <button
             onClick={() => { setErro(''); setModal('novo'); }}
-            className="flex items-center gap-2 px-4 py-2 text-sm font-medium bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            className="flex items-center gap-2 px-4 py-2 text-sm font-medium bg-accent text-white rounded-lg hover:opacity-90 transition-colors"
           >
             <Plus className="w-4 h-4" /> Novo Cartão
           </button>
@@ -396,38 +396,38 @@ export function CartoesPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-[300px_1fr] gap-6">
         {/* Lista de cartões */}
-        <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
+        <div className="bg-surface-raised rounded-xl border border-canvas-border overflow-hidden">
           {isLoading ? (
-            <div className="divide-y divide-slate-100 dark:divide-slate-700">
+            <div className="divide-y divide-canvas-border">
               {Array.from({ length: 4 }).map((_, i) => (
                 <div key={i} className="px-4 py-4 animate-pulse space-y-1.5">
-                  <div className="h-3 bg-slate-200 dark:bg-slate-700 rounded w-2/3" />
-                  <div className="h-3 bg-slate-200 dark:bg-slate-700 rounded w-1/3" />
+                  <div className="h-3 bg-canvas-border rounded w-2/3" />
+                  <div className="h-3 bg-canvas-border rounded w-1/3" />
                 </div>
               ))}
             </div>
           ) : cartoes.length === 0 ? (
-            <div className="px-4 py-8 text-center text-slate-400 dark:text-slate-500 text-sm">
+            <div className="px-4 py-8 text-center text-ink-subtle text-sm">
               Nenhum cartão cadastrado.
             </div>
           ) : (
-            <ul className="divide-y divide-slate-100 dark:divide-slate-700">
+            <ul className="divide-y divide-canvas-border">
               {cartoes.map(c => (
                 <li
                   key={c.idcartao}
-                  className={`flex items-center gap-3 px-4 py-3 cursor-pointer transition-colors ${
+                  className={`group flex items-center gap-3 px-4 py-3 cursor-pointer transition-colors ${
                     selecionado?.idcartao === c.idcartao
-                      ? 'bg-blue-50 dark:bg-blue-900/30'
-                      : 'hover:bg-slate-50 dark:hover:bg-slate-700/30'
+                      ? 'bg-accent/10'
+                      : 'hover:bg-surface'
                   }`}
                   onClick={() => setSelecionado(c)}
                 >
-                  <div className="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900/50 flex items-center justify-center flex-shrink-0">
-                    <CreditCard className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                  <div className="w-8 h-8 rounded-full bg-accent/15 flex items-center justify-center flex-shrink-0">
+                    <CreditCard className="w-4 h-4 text-accent" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-slate-900 dark:text-white truncate">{c.nome}</p>
-                    <p className="text-xs text-slate-400 dark:text-slate-500">
+                    <p className="text-sm font-medium text-ink truncate">{c.nome}</p>
+                    <p className="text-xs text-ink-subtle">
                       {[c.bandeira, c.diavencimento ? `vence dia ${c.diavencimento}` : null, c.membrofamilia?.nome].filter(Boolean).join(' · ')}
                     </p>
                   </div>
@@ -435,10 +435,10 @@ export function CartoesPage() {
                     <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 flex-shrink-0" onClick={e => e.stopPropagation()}>
                       {confirmDelete === c.idcartao ? (
                         <>
-                          <button onClick={() => deleteMut.mutate(c.idcartao)} className="p-1 text-red-500 hover:text-red-700" aria-label="Confirmar">
+                          <button onClick={() => deleteMut.mutate(c.idcartao)} className="p-1 text-ledger-danger hover:opacity-80" aria-label="Confirmar">
                             <Check className="w-3.5 h-3.5" />
                           </button>
-                          <button onClick={() => setConfirmDelete(null)} className="p-1 text-slate-400 hover:text-slate-600" aria-label="Cancelar">
+                          <button onClick={() => setConfirmDelete(null)} className="p-1 text-ink-subtle hover:text-ink" aria-label="Cancelar">
                             <X className="w-3.5 h-3.5" />
                           </button>
                         </>
@@ -446,14 +446,14 @@ export function CartoesPage() {
                         <>
                           <button
                             onClick={() => { setEditando(c); setErro(''); setModal('editar'); }}
-                            className="p-1 text-slate-400 hover:text-blue-500 transition-colors"
+                            className="p-1 text-ink-subtle hover:text-accent transition-colors"
                             aria-label="Editar"
                           >
                             <Pencil className="w-3.5 h-3.5" />
                           </button>
                           <button
                             onClick={() => setConfirmDelete(c.idcartao)}
-                            className="p-1 text-slate-400 hover:text-red-500 transition-colors"
+                            className="p-1 text-ink-subtle hover:text-ledger-danger transition-colors"
                             aria-label="Excluir"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
@@ -469,11 +469,11 @@ export function CartoesPage() {
         </div>
 
         {/* Painel de despesas */}
-        <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-5">
+        <div className="bg-surface-raised rounded-xl border border-canvas-border p-5">
           {selecionado ? (
             <DespesasPanel cartao={selecionado} />
           ) : (
-            <div className="flex flex-col items-center justify-center h-48 text-slate-400 dark:text-slate-500 text-sm gap-2">
+            <div className="flex flex-col items-center justify-center h-48 text-ink-subtle text-sm gap-2">
               <CreditCard className="w-8 h-8 opacity-30" />
               <p>Selecione um cartão para ver as despesas</p>
             </div>
@@ -484,7 +484,7 @@ export function CartoesPage() {
       {/* Modal Novo Cartão */}
       {modal === 'novo' && (
         <Modal title="Novo Cartão" onClose={() => setModal(null)}>
-          {erro && <p className="mb-3 text-xs text-red-500">{erro}</p>}
+          {erro && <p className="mb-3 text-xs text-ledger-danger">{erro}</p>}
           <CartaoForm
             membros={membros}
             onSubmit={values => createMut.mutate(values)}
@@ -497,7 +497,7 @@ export function CartoesPage() {
       {/* Modal Editar Cartão */}
       {modal === 'editar' && editando && (
         <Modal title="Editar Cartão" onClose={() => { setModal(null); setEditando(null); }}>
-          {erro && <p className="mb-3 text-xs text-red-500">{erro}</p>}
+          {erro && <p className="mb-3 text-xs text-ledger-danger">{erro}</p>}
           <CartaoForm
             initial={editando}
             membros={membros}
